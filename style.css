@@ -866,3 +866,11 @@ body:not(.clean) #dedication { top: 82px; font-size: 13px; opacity: .75; }
 
 /* when the tools are hidden, hide the dedication as well so only the scene remains */
 body.clean #dedication { opacity: 0 !important; }
+
+/* no logo any more */
+.header-bar { justify-content: center; gap: 18px; }
+@media (max-width: 720px) {
+    .header-bar { grid-template-columns: 1fr; grid-template-areas: "actions" "scenes"; }
+    .header-actions { justify-content: center; }
+}
+@media (max-width: 460px) { .header-bar { grid-template-columns: 1fr; } }

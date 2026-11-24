@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const t2 = document.getElementById('intro-name');
         if (t1) t1.textContent = 'Dành tặng ' + label + (CFG.since ? '  ·  💞 ' + daysTogether() + ' ngày bên nhau' : '');
         if (t2) t2.textContent = label;
-        document.title = 'Dành tặng ' + label + ' 💗 ZenHaven';
+        document.title = 'Dành tặng ' + label + ' 💗';
         const tag = document.querySelector('.logo-tagline');
         if (tag) tag.textContent = '| Dành tặng ' + label + ' 💗';
     }

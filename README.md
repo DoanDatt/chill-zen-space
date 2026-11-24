@@ -1,4 +1,4 @@
-# ZenHaven - Đạt dành tặng bé Hạnh 💗
+# Đạt dành tặng bé Hạnh 💗
 
 Một góc bình yên nhỏ bằng 3D: 4 cảnh (mưa bên lò sưởi, cực quang, biển hoàng hôn, rừng đào), mỗi cảnh có một cặp đôi
 ngồi cạnh nhau, nhạc nền thư giãn, chế độ tập trung (Pomodoro), thư tình mỗi ngày và pháo hoa vào ngày kỷ niệm.
