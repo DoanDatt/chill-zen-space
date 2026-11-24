@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenHaven 3.0 - Không Gian Thư Giãn Điện Ảnh 3D</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js Core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Three.js Post-Processing (UnrealBloom) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+</head>
+<body class="clean">
+
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-overlay">
+        <!-- Top Navigation -->
+        <header class="header-bar interactive">
+            <div class="logo-area">
+                <span class="logo-icon">✨</span>
+                <div>
+                    <span class="logo-title">ZenHaven 3.0</span>
+                    <span class="logo-tagline">| Cinematic Chill Atmosphere</span>
+                </div>
+            </div>
+
+            <!-- Scene Selector (4 Bối cảnh điện ảnh) -->
+            <div class="scene-controls">
+                <button class="glass-btn scene-btn active" data-scene="rain">🌧️ Mưa Kính & Lò Sưởi</button>
+                <button class="glass-btn scene-btn" data-scene="aurora">🌌 Cực Quang Vũ Trụ</button>
+                <button class="glass-btn scene-btn" data-scene="beach">🌊 Biển Hoàng Hôn Dát Vàng</button>
+                <button class="glass-btn scene-btn" data-scene="sakura">🌸 Rừng Đào Thần Thoại</button>
+            </div>
+
+            <!-- Top Actions -->
+            <div class="header-actions">
+                <button id="btn-singing-bowl" class="glass-btn" title="Chuông xoay chữa lành tần số 432Hz">🔔 Chuông 432Hz</button>
+                <button id="btn-wind-chime" class="glass-btn" title="Chuông gió tre thanh tịnh">🎐 Chuông Gió</button>
+                <button id="btn-open-lantern" class="glass-btn">🏮 Thả Đèn Trời</button>
+                <button id="btn-toggle-breathe" class="glass-btn">🫧 Nhịp Thở</button>
+                <button id="btn-open-thought" class="glass-btn">📜 Xóa Âu Lo</button>
+                <button id="btn-open-timer" class="glass-btn">⏳ Hẹn Giờ</button>
+                <button id="btn-mute" class="glass-btn">🔊 Âm Thanh</button>
+            </div>
+        </header>
+
+        <div class="scene-hint">🖱️ Rê chuột để xoay cảnh · Kéo để nhìn quanh · Chạm vào cảnh để thả tim 💗</div>
+
+        <!-- Middle: Affirmation Card -->
+        <div class="middle-row">
+            <div class="affirmation-card interactive">
+                <div id="quote-text">"Hôm nay bạn đã làm rất tốt rồi. Hãy cho phép bản thân được nghỉ ngơi."</div>
+                <button id="btn-new-quote" class="quote-refresh">✨ Đổi thông điệp khác</button>
+            </div>
+        </div>
+
+        <!-- Bottom: Soundscape Mixer -->
+        <footer class="bottom-bar interactive">
+            <div class="mixer-panel">
+                <div class="sound-track">
+                    <span class="track-label">🎹 Lofi Piano</span>
+                    <input type="range" id="slider-lofi" class="sound-slider" min="0" max="1" step="0.05" value="0.65">
+                </div>
+                <div class="sound-track">
+                    <span class="track-label">🌧️ Mưa rơi</span>
+                    <input type="range" id="slider-rain" class="sound-slider" min="0" max="1" step="0.05" value="0.5">
+                </div>
+                <div class="sound-track">
+                    <span class="track-label">🔥 Lửa sưởi</span>
+                    <input type="range" id="slider-fire" class="sound-slider" min="0" max="1" step="0.05" value="0.45">
+                </div>
+                <div class="sound-track">
+                    <span class="track-label">🌊 Sóng biển</span>
+                    <input type="range" id="slider-ocean" class="sound-slider" min="0" max="1" step="0.05" value="0.0">
+                </div>
+                <div class="sound-track">
+                    <span class="track-label">🍃 Gió đêm</span>
+                    <input type="range" id="slider-wind" class="sound-slider" min="0" max="1" step="0.05" value="0.35">
+                </div>
+                <div class="sound-track">
+                    <span class="track-label">🦗 Dế đêm</span>
+                    <input type="range" id="slider-crickets" class="sound-slider" min="0" max="1" step="0.05" value="0.0">
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Dedication: always visible, even when the tools are hidden -->
+    <div id="dedication"><span class="ded-heart">💗</span> <span id="ded-text">Dành tặng em</span> <span class="ded-heart">💗</span></div>
+
+    <!-- Tiny navigation shown in clean mode (fades away when idle) -->
+    <div id="mini-nav">
+        <button class="mini-btn" data-go="rain" title="Mưa Kính & Lò Sưởi">🌧️</button>
+        <button class="mini-btn" data-go="aurora" title="Cực Quang">🌌</button>
+        <button class="mini-btn" data-go="beach" title="Biển Hoàng Hôn">🌊</button>
+        <button class="mini-btn" data-go="sakura" title="Rừng Đào">🌸</button>
+        <span class="mini-sep"></span>
+        <button class="mini-btn pulse-hint" id="btn-letter" title="Thư gửi em">💌</button>
+        <button class="mini-btn" id="btn-toggle-ui" title="Hiện / ẩn công cụ (phím H)">🎛️</button>
+        <button class="mini-btn" id="btn-set-name" title="Đổi tên người nhận">✏️</button>
+    </div>
+
+    <!-- Love letter -->
+    <div id="letter-modal" class="zen-modal letter">
+        <button class="modal-close">&times;</button>
+        <div class="letter-paper">
+            <div class="letter-to" id="letter-to">Gửi em,</div>
+            <p class="letter-body" id="letter-body"></p>
+            <p class="letter-days" id="letter-days"></p>
+            <div class="letter-sign" id="letter-sign">— Anh</div>
+        </div>
+        <button class="glass-btn" id="btn-letter-next" style="margin-top: 14px;">💌 Lời nhắn khác</button>
+    </div>
+
+    <!-- Welcome screen -->
+    <div id="intro">
+        <div class="intro-card">
+            <div class="intro-heart">💗</div>
+            <div class="intro-for">Dành tặng</div>
+            <div class="intro-name" id="intro-name">em</div>
+            <p class="intro-msg">Anh làm góc nhỏ bình yên này riêng cho em.<br>Mỗi khi mệt, hãy ghé vào đây nghỉ một chút nhé.</p>
+            <button id="btn-enter" class="intro-btn">✨ Bước vào</button>
+            <div class="intro-tip">🎧 Bật loa hoặc đeo tai nghe để có trải nghiệm trọn vẹn nhất</div>
+        </div>
+    </div>
+
+    <!-- Modal 1: 4-7-8 Breathing Guide -->
+    <div id="breathe-modal" class="zen-modal">
+        <button class="modal-close">&times;</button>
+        <h3 style="margin-bottom: 8px; color: #a7f3d0;">🫧 Liệu Pháp Hơi Thở 4-7-8</h3>
+        <p style="font-size: 13px; color: #94a3b8; max-width: 320px;">Hạ nhịp tim, xoa dịu hệ thần kinh và đưa tâm trí vào trạng thái an yên sau 1 phút.</p>
+        <div class="breathe-container">
+            <div id="breathe-circle">
+                <div id="breathe-count">4</div>
+            </div>
+            <div id="breathe-instruction">Hít vào thật sâu qua mũi...</div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Thought Release Burner -->
+    <div id="thought-modal" class="zen-modal">
+        <button class="modal-close">&times;</button>
+        <h3 style="margin-bottom: 8px; color: #fde68a;">📜 Trút Bỏ Muộn Phiền</h3>
+        <p style="font-size: 13px; color: #94a3b8; max-width: 320px;">Viết điều làm bạn mệt mỏi vào đây. Nhấn hóa tro, muộn phiền sẽ tan biến thành các hạt sao.</p>
+        <div class="thought-box">
+            <div id="thought-paper">
+                <textarea id="thought-input" placeholder="Viết những mỏi mệt hoặc âu lo của bạn vào đây..."></textarea>
+                <div id="thought-sparks"></div>
+            </div>
+        </div>
+        <button id="btn-burn-thought" class="glass-btn active" style="margin-top: 10px;">🔥 Hóa Tro Thành Sao</button>
+        <div id="thought-toast">✨ Những gánh nặng đã tan biến vào hư vô. Bạn đã được giải phóng!</div>
+    </div>
+
+    <!-- Modal 3: Sky Lantern Wish Release -->
+    <div id="lantern-modal" class="zen-modal">
+        <button class="modal-close">&times;</button>
+        <h3 style="margin-bottom: 8px; color: #fbbf24;">🏮 Thả Đèn Trời Ước Nguyện</h3>
+        <p style="font-size: 13px; color: #94a3b8; max-width: 330px;">Gửi gắm ước mong của bạn vào chiếc đèn trời phát sáng. Chiếc đèn sẽ bay bổng lên bầu trời sao lung linh.</p>
+        <div class="thought-box" style="margin-top: 10px;">
+            <textarea id="wish-input" placeholder="Nhập lời ước nguyện hoặc điều bạn mong muốn cho ngày mai..."></textarea>
+        </div>
+        <button id="btn-release-lantern" class="glass-btn active" style="margin-top: 10px; background: linear-gradient(135deg, #f59e0b, #d97706);">✨ Thả Đèn Lên Bầu Trời</button>
+        <div id="wish-toast">🏮 Chiếc đèn trời mang ước nguyện của bạn đang bay lên dải ngân hà!</div>
+    </div>
+
+    <!-- Modal 4: Sleep Timer -->
+    <div id="timer-modal" class="zen-modal">
+        <button class="modal-close">&times;</button>
+        <h3 style="margin-bottom: 8px; color: #bae6fd;">⏳ Hẹn Giờ Ngủ</h3>
+        <p style="font-size: 13px; color: #94a3b8; max-width: 320px;">Âm thanh sẽ nhỏ dần và tự động tắt để bạn chìm vào giấc ngủ êm dịu.</p>
+        <div class="timer-list">
+            <button class="glass-btn timer-btn" data-mins="15">15 Phút</button>
+            <button class="glass-btn timer-btn" data-mins="30">30 Phút</button>
+            <button class="glass-btn timer-btn" data-mins="45">45 Phút</button>
+            <button class="glass-btn timer-btn" data-mins="60">60 Phút</button>
+        </div>
+        <div id="timer-display" style="margin-top: 14px; font-size: 14px; color: #38bdf8;">Chưa bật hẹn giờ</div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script src="audio-engine.js"></script>
+    <script src="animals.js"></script>
+    <script src="zen-utils.js"></script>
+    <script src="scene-rain.js"></script>
+    <script src="scene-aurora.js"></script>
+    <script src="scene-beach.js"></script>
+    <script src="scene-sakura.js"></script>
+    <script src="scenes.js"></script>
+    <script src="zen-tools.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
