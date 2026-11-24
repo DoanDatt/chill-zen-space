@@ -844,3 +844,22 @@ body:not(.clean) #dedication { top: 82px; font-size: 13px; opacity: .75; }
 .fh-btns .ft-done { display: none; background: rgba(123, 224, 195, .25); }
 #focus-hud.has-tasks .fh-btns .ft-done { display: inline-block; }
 #focus-hud.compact .fh-btns .ft-done { display: none; }
+
+/* ---- header never clips its own content: it grows with the content and hides labels earlier on narrower windows ---- */
+.header-bar { width: fit-content; max-width: calc(100vw - 32px); margin-left: auto; margin-right: auto; }
+@media (max-width: 1500px) { .logo-tagline { display: none; } }
+@media (max-width: 1320px) {
+    .tool-btn:not(.primary) .t, .tool-btn .caret { display: none; }
+    .tool-btn:not(.primary):not(.icon) { width: 38px; padding: 0; justify-content: center; }
+}
+@media (max-width: 1180px) {
+    .logo-text { display: none; }
+    .tool-btn.primary .t { display: none; }
+    .tool-btn.primary { width: 38px; padding: 0; justify-content: center; }
+    .scene-btn:not(.active) .t { display: none; }
+}
+@media (max-width: 720px) {
+    .header-bar { width: 100%; max-width: none; }
+    .scene-btn:not(.active) .t { display: inline; }
+}
+@media (max-width: 460px) { .logo-text { display: none; } }
