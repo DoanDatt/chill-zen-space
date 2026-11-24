@@ -221,6 +221,7 @@ class ZenScenes {
         this.hearts = [];
         this.applyFov();
         this.updateCamera(0.016);
+        if (this.onChange) this.onChange();
     }
 
     switchScene(id) {
@@ -249,6 +250,14 @@ class ZenScenes {
     // focus mode: the scene barely reacts to the mouse so nothing distracts you
     setCalm(v) { this.calm = !!v; }
 
+    // weather / effects: each world may expose { names: [...], index, set(i) }
+    cycleWeather() {
+        const w = this.world && this.world.weather;
+        if (!w) return;
+        w.set((w.index + 1) % w.names.length);
+    }
+    weatherName() { const w = this.world && this.world.weather; return w ? w.names[w.index] : ''; }
+
     // ------------------------------------------------------------------ interaction
     handleTap(cx, cy) {
         if (!this.world) return;
@@ -257,6 +266,14 @@ class ZenScenes {
         if (this.world.pettable) {
             const hits = this.raycaster.intersectObject(this.world.pettable, true);
             if (hits.length) { this.petCat(); return; }
+        }
+        if (this.world.polaroids && this.world.polaroids.length) {
+            const hits = this.raycaster.intersectObjects(this.world.polaroids, true);
+            if (hits.length) {
+                let o = hits[0].object;
+                while (o && o.userData.photoIndex === undefined) o = o.parent;
+                if (o && window.ZLove) { ZLove.openPhoto(o.userData.photoIndex); return; }
+            }
         }
         if (this.world.couple) {
             const hits = this.raycaster.intersectObject(this.world.couple.mesh, true);

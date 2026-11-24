@@ -26,7 +26,7 @@ function buildBeachScene() {
         const w = 90 + R() * 130;
         s.scale.set(w, w * 0.22, 1);
         s.position.set((R() - 0.5) * 520, 22 + R() * 70 + (i % 3) * 8, -230 - R() * 60);
-        scene.add(s); clouds.push({ s, v: 0.5 + R() * 1.2 });
+        scene.add(s); clouds.push({ s, v: 0.5 + R() * 1.2, base: s.material.opacity });
     }
     updates.push((dt) => clouds.forEach(c => { c.s.position.x += c.v * dt; if (c.s.position.x > 290) c.s.position.x = -290; }));
 
@@ -262,6 +262,17 @@ function buildBeachScene() {
     const lg = glowSprite(0xffb86b, 1.5, 0.8); lg.position.set(-0.9, 0.3, -0.5); pic.add(lg);
     updates.push((dt, t) => { lanternLight.intensity = 1.0 + Math.sin(t * 7) * 0.12; lg.material.opacity = 0.7 + Math.sin(t * 6) * 0.1; });
 
+    const polaroids = ZU.addPolaroids(pic, [
+        { pos: [0.2, 0.3, -0.95], rot: [-0.3, 0.2, 0], scale: 1.05 },
+        { pos: [0.55, 0.28, -0.9], rot: [-0.3, -0.25, 0], scale: 1.0 }
+    ]);
+    updates.push((dt, t) => ZU.swayPolaroids(polaroids, t));
+
+    const weather = {
+        names: ['Mây hồng', 'Mây thưa', 'Trời quang'], index: 0,
+        set(i) { this.index = i; const m = [1, 0.35, 0.05][i]; clouds.forEach(c => { c.s.material.opacity = c.base * m; }); }
+    };
+
     // wooden sign stuck in the sand: "A ♥ B"
     const sign = ZU.makeSign(ZU.signParts());
     sign.position.set(0.9, sandH(0.9, 1.0) - 0.05, 1.0); sign.rotation.y = -0.25; sign.scale.setScalar(1.15);
@@ -301,6 +312,8 @@ function buildBeachScene() {
     return {
         scene,
         couple,
+        weather,
+        polaroids,
         update(dt, t, ctx) { updates.forEach(u => u(dt, t, ctx)); },
         cfg: {
             target: new THREE.Vector3(0, 2.0, -8), dist: 19, camY: 3.6, fov: 54,

@@ -412,7 +412,7 @@ function createOwl() {
 // =========================================================================
 function createSeagullFlock(count = 5) {
     const flock = new THREE.Group();
-    const matBird = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
+    const matBird = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7, emissive: 0xffffff, emissiveIntensity: 0.5 });
     const matBeak = new THREE.MeshBasicMaterial({ color: 0xffb703 });
 
     const birds = [];
@@ -641,11 +641,7 @@ function createKoiFish() {
     const koi = new THREE.Group();
 
     // Vibrant Kohaku pattern (White with vermilion orange patches)
-    const matKoi = new THREE.MeshStandardMaterial({
-        color: 0xff4500,
-        roughness: 0.2,
-        metalness: 0.1
-    });
+    const matKoi = new THREE.MeshStandardMaterial({ color: 0xff4500, roughness: 0.2, metalness: 0.1, emissive: 0xff3a00, emissiveIntensity: 0.4 });
 
     const matWhite = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -753,51 +749,51 @@ function createButterflies(count = 4) {
 
 function createGrazingFawn() {
     const fawn = new THREE.Group();
-    const matFawn = new THREE.MeshStandardMaterial({ color: 0xba7947, roughness: 0.85 });
-    const matSpot = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const matFawn = new THREE.MeshStandardMaterial({ color: 0xc58650, roughness: 0.85 });
+    const matBelly = new THREE.MeshStandardMaterial({ color: 0xf1d9b8, roughness: 0.9 });
+    const matDark = new THREE.MeshStandardMaterial({ color: 0x4a2f1e, roughness: 0.8 });
+    const matSpot = new THREE.MeshStandardMaterial({ color: 0xfff1d6, roughness: 0.9 });
+    const matEye = new THREE.MeshBasicMaterial({ color: 0x1b120d });
+    const add = (parent, geo, mat, x, y, z, sx = 1, sy = 1, sz = 1) => {
+        const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; parent.add(m); return m;
+    };
 
-    // Body
-    const bodyGeo = new THREE.CylinderGeometry(0.2, 0.22, 0.7, 8);
-    bodyGeo.rotateX(Math.PI / 2);
-    const body = new THREE.Mesh(bodyGeo, matFawn);
-    body.position.y = 0.55;
-    fawn.add(body);
-
-    // Dappled spots
-    for (let i = -2; i <= 2; i++) {
-        const spot = new THREE.Mesh(new THREE.CircleGeometry(0.025, 6), matSpot);
-        spot.rotation.x = -Math.PI / 2;
-        spot.position.set(0.08, 0.76, i * 0.1);
-        fawn.add(spot);
+    // soft rounded body: back, belly, haunch
+    add(fawn, new THREE.SphereGeometry(0.3, 18, 14), matFawn, 0, 0.62, 0.02, 0.8, 0.75, 1.55);
+    add(fawn, new THREE.SphereGeometry(0.28, 14, 10), matBelly, 0, 0.5, 0.04, 0.7, 0.5, 1.4);
+    add(fawn, new THREE.SphereGeometry(0.26, 14, 10), matFawn, 0, 0.64, -0.3, 0.9, 0.95, 1.0);
+    // dappled spots along the back
+    for (let i = 0; i < 12; i++) {
+        const x = (i % 2 ? 1 : -1) * (0.05 + (i % 3) * 0.045), z = -0.36 + Math.floor(i / 2) * 0.13;
+        const k = 1 - (x / 0.24) * (x / 0.24) - (z / 0.465) * (z / 0.465);
+        if (k <= 0.05) continue;
+        add(fawn, new THREE.SphereGeometry(0.026, 6, 5), matSpot, x, 0.62 + 0.04 + 0.225 * Math.sqrt(k) * 0.97, z + 0.02, 1, 0.4, 1);
     }
+    // little white tail
+    add(fawn, new THREE.SphereGeometry(0.06, 8, 6), matSpot, 0, 0.74, -0.54, 0.7, 1.1, 0.7);
 
-    // Neck & Head
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.14, 0.45, 8), matFawn);
-    neck.position.set(0, 0.85, 0.32);
-    neck.rotation.x = -0.5;
-    fawn.add(neck);
-
+    // neck + head
+    const neck = add(fawn, new THREE.CylinderGeometry(0.075, 0.115, 0.52, 10), matFawn, 0, 0.9, 0.4);
+    neck.rotation.x = -0.62;
     const headJoint = new THREE.Group();
-    headJoint.position.set(0, 1.05, 0.46);
+    headJoint.position.set(0, 1.12, 0.6);
     fawn.add(headJoint);
+    add(headJoint, new THREE.SphereGeometry(0.135, 14, 12), matFawn, 0, 0, 0, 0.85, 0.82, 1.15);
+    add(headJoint, new THREE.SphereGeometry(0.075, 12, 10), matBelly, 0, -0.04, 0.14, 0.85, 0.7, 1.3);
+    add(headJoint, new THREE.SphereGeometry(0.026, 8, 6), matDark, 0, -0.02, 0.235);
+    [-1, 1].forEach(s => {
+        add(headJoint, new THREE.SphereGeometry(0.018, 8, 6), matEye, s * 0.07, 0.04, 0.1);
+        const ear = add(headJoint, new THREE.ConeGeometry(0.06, 0.2, 6), matFawn, s * 0.11, 0.13, -0.05, 1, 1, 0.35);
+        ear.rotation.set(-0.15, 0, -s * 0.95);
+        const inner = add(headJoint, new THREE.ConeGeometry(0.035, 0.14, 5), matBelly, s * 0.112, 0.125, -0.035, 1, 1, 0.3);
+        inner.rotation.set(-0.15, 0, -s * 0.95);
+    });
 
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.3), matFawn);
-    headJoint.add(head);
-
-    // Delicate pointy ears
-    for (let s = -1; s <= 1; s += 2) {
-        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 4), matFawn);
-        ear.position.set(s * 0.1, 0.12, -0.05);
-        ear.rotation.set(-0.2, 0, s * 0.5);
-        headJoint.add(ear);
-    }
-
-    // Legs
-    const legGeo = new THREE.CylinderGeometry(0.04, 0.03, 0.55, 6);
-    [[-0.12, 0.28, 0.22], [0.12, 0.28, 0.22], [-0.12, 0.28, -0.22], [0.12, 0.28, -0.22]].forEach(p => {
-        const leg = new THREE.Mesh(legGeo, matFawn);
-        leg.position.set(...p);
-        fawn.add(leg);
+    // slender legs with dark hooves
+    [[-0.13, 0.3], [0.13, 0.3], [-0.13, -0.3], [0.13, -0.3]].forEach(p => {
+        add(fawn, new THREE.CylinderGeometry(0.045, 0.032, 0.34, 8), matFawn, p[0], 0.4, p[1]);
+        add(fawn, new THREE.CylinderGeometry(0.03, 0.025, 0.3, 8), matFawn, p[0], 0.17, p[1]);
+        add(fawn, new THREE.CylinderGeometry(0.03, 0.034, 0.05, 8), matDark, p[0], 0.025, p[1]);
     });
 
     fawn.position.set(-2.8, 0, -2.2);
@@ -808,7 +804,7 @@ function createGrazingFawn() {
         mesh: fawn,
         update: (delta) => {
             time += delta;
-            // Peaceful grazing motion: lowering snout to grass, lifting, looking around
+            // peaceful grazing: lowering the snout to the grass, lifting, looking around
             headJoint.rotation.x = Math.sin(time * 0.5) * 0.35 + 0.3;
             headJoint.rotation.y = Math.sin(time * 0.25) * 0.2;
         }

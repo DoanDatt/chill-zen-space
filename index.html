@@ -4,7 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0b0a14">
-    <title>ZenHaven 3.0 - Không Gian Thư Giãn Điện Ảnh 3D</title>
+    <title>Dành tặng em 💗 ZenHaven</title>
+    <meta name="description" content="Một góc bình yên nhỏ, làm riêng cho em: mưa bên lò sưởi, cực quang, biển hoàng hôn và rừng đào.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ZenHaven">
+    <meta property="og:title" content="Dành tặng em 💗 ZenHaven">
+    <meta property="og:description" content="Một góc bình yên nhỏ, làm riêng cho em: mưa bên lò sưởi, cực quang, biển hoàng hôn và rừng đào.">
+    <meta property="og:image" content="https://doandatt.github.io/chill-zen-space/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://doandatt.github.io/chill-zen-space/">
+    <meta property="og:locale" content="vi_VN">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="ZenHaven">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="style.css">
     <!-- Three.js Core -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -24,41 +41,34 @@
 
     <!-- UI Overlay -->
     <div id="ui-overlay">
-        <!-- Top Navigation -->
+        <!-- Top bar: logo | scenes | main actions -->
         <header class="header-bar interactive">
             <div class="logo-area">
                 <span class="logo-icon">✨</span>
-                <div>
-                    <span class="logo-title">ZenHaven 3.0</span>
+                <div class="logo-text">
+                    <span class="logo-title">ZenHaven</span>
                     <span class="logo-tagline">| Cinematic Chill Atmosphere</span>
                 </div>
             </div>
 
-            <!-- Scene Selector (4 Bối cảnh điện ảnh) -->
-            <div class="scene-controls">
-                <button class="glass-btn scene-btn active" data-scene="rain">🌧️ Mưa Kính & Lò Sưởi</button>
-                <button class="glass-btn scene-btn" data-scene="aurora">🌌 Cực Quang Vũ Trụ</button>
-                <button class="glass-btn scene-btn" data-scene="beach">🌊 Biển Hoàng Hôn Dát Vàng</button>
-                <button class="glass-btn scene-btn" data-scene="sakura">🌸 Rừng Đào Thần Thoại</button>
-            </div>
+            <nav class="scene-controls" aria-label="Chọn cảnh">
+                <button class="glass-btn scene-btn active" data-scene="rain"><span class="e">🌧️</span><span class="t">Mưa &amp; Lò sưởi</span></button>
+                <button class="glass-btn scene-btn" data-scene="aurora"><span class="e">🌌</span><span class="t">Cực quang</span></button>
+                <button class="glass-btn scene-btn" data-scene="beach"><span class="e">🌊</span><span class="t">Biển hoàng hôn</span></button>
+                <button class="glass-btn scene-btn" data-scene="sakura"><span class="e">🌸</span><span class="t">Rừng đào</span></button>
+            </nav>
 
-            <!-- Top Actions -->
             <div class="header-actions">
-                <button id="btn-hide-ui" class="glass-btn" title="Ẩn hết công cụ để xem trọn cảnh (phím H)">🙈 Ẩn Công Cụ</button>
-                <button id="btn-singing-bowl" class="glass-btn" title="Chuông xoay chữa lành tần số 432Hz">🔔 Chuông 432Hz</button>
-                <button id="btn-wind-chime" class="glass-btn" title="Chuông gió tre thanh tịnh">🎐 Chuông Gió</button>
-                <button id="btn-open-lantern" class="glass-btn">🏮 Thả Đèn Trời</button>
-                <button id="btn-toggle-breathe" class="glass-btn">🫧 Nhịp Thở</button>
-                <button id="btn-open-thought" class="glass-btn">📜 Xóa Âu Lo</button>
-                <button id="btn-open-focus" class="glass-btn">🎯 Tập Trung</button>
-                <button id="btn-open-timer" class="glass-btn">⏳ Hẹn Giờ</button>
-                <button id="btn-mute" class="glass-btn">🔊 Âm Thanh</button>
+                <button id="btn-open-focus" class="tool-btn primary" title="Chế độ tập trung (phím F)"><span class="e">🎯</span><span class="t">Tập trung</span></button>
+                <button id="btn-letter-h" class="tool-btn" title="Thư gửi em"><span class="e">💌</span><span class="t">Thư</span></button>
+                <button id="btn-mute" class="tool-btn icon" title="Bật / tắt âm thanh">🔊</button>
+                <button id="btn-mixer" class="tool-btn icon" title="Trộn âm thanh">🎚️</button>
+                <button id="btn-tools" class="tool-btn" title="Thêm công cụ"><span class="e">🧰</span><span class="t">Công cụ</span><span class="caret">▾</span></button>
+                <button id="btn-hide-ui" class="tool-btn icon" title="Ẩn hết công cụ (phím H)">🙈</button>
             </div>
         </header>
 
-        <div class="scene-hint">🖱️ Rê chuột để xoay cảnh · Kéo để nhìn quanh · Chạm vào cảnh để thả tim 💗</div>
-
-        <!-- Middle: Affirmation Card -->
+        <!-- Affirmation: a small toast that appears on request -->
         <div class="middle-row">
             <div class="affirmation-card interactive">
                 <div id="quote-text">"Hôm nay bạn đã làm rất tốt rồi. Hãy cho phép bản thân được nghỉ ngơi."</div>
@@ -97,6 +107,26 @@
         </footer>
     </div>
 
+    <!-- Tools menu (kept outside the header so it is never clipped) -->
+    <div id="tools-menu" class="tools-menu" role="menu">
+        <div class="tm-title">Công cụ thư giãn</div>
+        <div class="tm-grid">
+            <button id="btn-singing-bowl" title="Chuông xoay chữa lành tần số 432Hz"><span>🔔</span>Chuông 432Hz</button>
+            <button id="btn-wind-chime" title="Chuông gió tre thanh tịnh"><span>🎐</span>Chuông gió</button>
+            <button id="btn-open-lantern"><span>🏮</span>Thả đèn trời</button>
+            <button id="btn-toggle-breathe"><span>🫧</span>Nhịp thở</button>
+            <button id="btn-open-thought"><span>📜</span>Xóa âu lo</button>
+            <button id="btn-open-timer"><span>⏳</span>Hẹn giờ ngủ</button>
+        </div>
+        <div class="tm-title">Dành cho hai ta</div>
+        <div class="tm-grid">
+            <button id="btn-gallery"><span>📷</span>Kỷ niệm</button>
+            <button id="btn-weather"><span>🌦️</span><em id="weather-label">Hiệu ứng</em></button>
+            <button id="btn-show-quote"><span>💬</span>Thông điệp</button>
+            <button id="btn-set-name"><span>✏️</span>Cài đặt</button>
+        </div>
+    </div>
+
     <!-- Dedication: always visible, even when the tools are hidden -->
     <div id="dedication"><span class="ded-heart">💗</span> <span id="ded-text">Dành tặng em</span> <span class="ded-heart">💗</span></div>
 
@@ -110,7 +140,6 @@
         <button class="mini-btn" id="btn-focus" title="Chế độ tập trung (phím F)">🎯</button>
         <button class="mini-btn pulse-hint" id="btn-letter" title="Thư gửi em">💌</button>
         <button class="mini-btn" id="btn-toggle-ui" title="Hiện / ẩn công cụ (phím H)">🎛️</button>
-        <button class="mini-btn" id="btn-set-name" title="Đổi tên người nhận">✏️</button>
     </div>
 
     <!-- Love letter -->
@@ -193,8 +222,10 @@
 
     <!-- Application Scripts -->
     <script src="audio-engine.js"></script>
+    <script src="love-config.js"></script>
     <script src="animals.js"></script>
     <script src="zen-utils.js"></script>
+    <script src="love.js"></script>
     <script src="couple.js"></script>
     <script src="scene-rain.js"></script>
     <script src="scene-aurora.js"></script>

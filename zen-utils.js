@@ -299,6 +299,49 @@ const ZU = (() => {
         return [{ t: '♥ ', heart: true }, { t: c.for === 'em' ? 'Mãi bên nhau' : c.for }, { t: ' ♥', heart: true }];
     }
 
+    // Polaroid photo cards (photos come from love-config.js). Tap one in a scene to open it large.
+    const photoTexCache = {};
+    function loadPhotoTex(src, cb) {
+        if (photoTexCache[src]) { cb(photoTexCache[src]); return; }
+        new THREE.TextureLoader().load(src, (t) => { photoTexCache[src] = t; cb(t); }, undefined, () => { /* missing file: keep the blank card */ });
+    }
+    function makePolaroid(photo, idx, w = 0.62) {
+        const h = w * 1.22, g = new THREE.Group();
+        const card = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), new THREE.MeshStandardMaterial({ color: 0xfdf8ee, roughness: 0.9 }));
+        card.castShadow = true; g.add(card);
+        const iw = w * 0.86, ih = iw * 0.92;
+        const pm = new THREE.MeshStandardMaterial({ color: 0xcfc6bb, roughness: 0.6, emissive: 0xffffff, emissiveIntensity: 0.28 });
+        const photoMesh = new THREE.Mesh(new THREE.PlaneGeometry(iw, ih), pm);
+        photoMesh.position.set(0, h / 2 - w * 0.07 - ih / 2, 0.0115); g.add(photoMesh);
+        loadPhotoTex(photo.src, (tex) => {
+            const a = tex.image.width / tex.image.height, target = iw / ih;
+            if (a > target) { tex.repeat.x = target / a; tex.offset.x = (1 - tex.repeat.x) / 2; } else { tex.repeat.y = a / target; tex.offset.y = (1 - tex.repeat.y) / 2; }
+            pm.map = tex; pm.emissiveMap = tex; pm.color.set(0xffffff); pm.needsUpdate = true;
+        });
+        if (photo.caption) {
+            const ct = canvasTex(256, 56, (c, W, H) => { c.fillStyle = '#4a3a30'; c.font = '28px "Segoe Script","Bradley Hand",cursive'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(photo.caption.slice(0, 22), W / 2, H / 2); });
+            const cap = new THREE.Mesh(new THREE.PlaneGeometry(iw, iw * 0.2), new THREE.MeshBasicMaterial({ map: ct, transparent: true }));
+            cap.position.set(0, -h / 2 + w * 0.11, 0.0115); g.add(cap);
+        }
+        g.userData.photoIndex = idx;
+        return g;
+    }
+    function addPolaroids(parent, slots) {
+        const ph = ((window.LOVE && window.LOVE.photos) || []).filter(p => p && p.src);
+        const out = [];
+        const n = Math.min(slots.length, ph.length);
+        for (let i = 0; i < n; i++) {
+            const s = slots[i], g = makePolaroid(ph[i], i, s.w || 0.62);
+            g.position.set(s.pos[0], s.pos[1], s.pos[2]);
+            g.rotation.set(...(s.rot || [0, 0, 0]));
+            g.scale.setScalar(s.scale || 1);
+            g.userData.baseZ = g.rotation.z;
+            parent.add(g); out.push(g);
+        }
+        return out;
+    }
+    function swayPolaroids(list, t) { list.forEach((g, i) => { g.rotation.z = g.userData.baseZ + Math.sin(t * 0.8 + i * 1.7) * 0.012; }); }
+
     function at(obj, x, y, z) { obj.position.set(x, y, z); return obj; }
 
     function shadowAll(obj, cast = true, receive = false) {
@@ -397,7 +440,7 @@ const ZU = (() => {
 
     return {
         TAU, clamp, lerp, rand, smooth, rng, vnoise, fbm, canvasTex, glowTex, heartTex, cloudTex, glowSprite,
-        makeSky, makeTwinkle, makeStars, makeTerrain, makeRidgeRing, instanced, stdMat, box, at, makeSign, signParts, shadowAll,
+        makeSky, makeTwinkle, makeStars, makeTerrain, makeRidgeRing, instanced, stdMat, box, at, makeSign, signParts, makePolaroid, addPolaroids, swayPolaroids, shadowAll,
         makeFire, makeSteam, pixelRatio: 1
     };
 })();

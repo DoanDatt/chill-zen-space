@@ -237,7 +237,8 @@ function buildRainScene() {
     const art = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.4), new THREE.MeshStandardMaterial({ map: paint, roughness: 0.8, emissive: 0xffffff, emissiveMap: paint, emissiveIntensity: 0.18 }));
     art.position.set(fx, 4.5, -5.87); scene.add(art);
     // put your own photo in the frame: drop a file called us.jpg next to index.html
-    new THREE.TextureLoader().load('us.jpg', (tex) => {
+    const frameSrc = (window.LOVE && LOVE.photos && LOVE.photos.length && LOVE.photos[0].src) || 'us.jpg';
+    new THREE.TextureLoader().load(frameSrc, (tex) => {
         const img = tex.image, a = img.width / img.height, target = 2.2 / 1.4;
         if (a > target) { tex.repeat.x = target / a; tex.offset.x = (1 - tex.repeat.x) / 2; }
         else { tex.repeat.y = a / target; tex.offset.y = (1 - tex.repeat.y) / 2; }
@@ -450,9 +451,29 @@ function buildRainScene() {
         } else cat.mesh.scale.setScalar(1.75);
     });
 
+    const polaroids = ZU.addPolaroids(scene, [
+        { pos: [-0.55, 1.5, -4.6], rot: [-0.15, 0.2, 0], scale: 1.15 },
+        { pos: [4.5, 3.62, -5.3], rot: [-0.1, 0.15, 0], scale: 1.2 },
+        { pos: [-6.3, 5.1, -5.5], rot: [-0.1, 0.1, 0], scale: 1.1 }
+    ]);
+    updates.push((dt, t) => ZU.swayPolaroids(polaroids, t));
+
+    const weather = {
+        names: ['Mưa to', 'Mưa nhẹ', 'Tạnh'], index: 0,
+        set(i) {
+            this.index = i;
+            const f = [1, 0.3, 0][i];
+            rainGeo.setDrawRange(0, Math.floor(RN * f) * 2); rain.visible = f > 0;
+            dropGeo.setDrawRange(0, Math.floor(DN * (i === 2 ? 0.12 : f)));
+            trailGeo.setDrawRange(0, Math.floor(DN * f) * 2);
+        }
+    };
+
     return {
         scene,
         couple,
+        weather,
+        polaroids,
         update(dt, t) { updates.forEach(u => u(dt, t)); },
         pettable: cat.mesh,
         onPet,

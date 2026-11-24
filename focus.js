@@ -40,6 +40,11 @@ class ZenFocus {
                 <input id="fc-break" type="number" min="1" max="60" value="5"> phút
                 <button id="fc-start" class="glass-btn active">▶ Bắt đầu</button>
             </div>
+            <div class="focus-tasks">
+                <div class="ft-head">Việc cần làm trong phiên <small>(không bắt buộc)</small></div>
+                <div class="ft-add"><input id="ft-input" class="focus-input" maxlength="60" placeholder="Thêm một việc..."><button id="ft-add" class="glass-btn">＋</button></div>
+                <ul id="ft-list"></ul>
+            </div>
             <div class="focus-stats" id="focus-stats"></div>
             <div class="focus-tip">Mẹo: nhấn phím <b>F</b> để mở nhanh · rê chuột để xem điều khiển</div>`;
         document.body.appendChild(modal);
@@ -51,6 +56,7 @@ class ZenFocus {
             <svg class="fh-ring" viewBox="0 0 44 44"><circle class="bg" cx="22" cy="22" r="19"/><circle class="fg" cx="22" cy="22" r="19" transform="rotate(-90 22 22)"/></svg>
             <div class="fh-text"><div class="fh-time">25:00</div><div class="fh-label">Tập trung</div><div class="fh-task"></div></div>
             <div class="fh-btns">
+                <button data-a="done" title="Xong việc này" class="ft-done">✓</button>
                 <button data-a="pause" title="Tạm dừng / tiếp tục">⏸</button>
                 <button data-a="skip" title="Bỏ qua giai đoạn này">⏭</button>
                 <button data-a="stop" title="Kết thúc">⏹</button>
@@ -78,8 +84,18 @@ class ZenFocus {
             const b = Math.max(1, Math.min(60, +document.getElementById('fc-break').value || 5));
             this.start(f, b, document.getElementById('focus-task').value);
         });
+        this.tasks = this.loadTasks();
+        const addTask = () => {
+            const inp = document.getElementById('ft-input'), t = inp.value.trim().slice(0, 60);
+            if (!t || this.tasks.length >= 10) return;
+            this.tasks.push({ t, done: false }); inp.value = ''; this.saveTasks(); this.renderTasks();
+        };
+        document.getElementById('ft-add').addEventListener('click', addTask);
+        document.getElementById('ft-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(); });
+        this.renderTasks();
         hud.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => {
             const a = b.dataset.a;
+            if (a === 'done') this.completeTask();
             if (a === 'pause') this.togglePause();
             if (a === 'skip') this.nextPhase(true);
             if (a === 'stop') this.stop();
@@ -114,7 +130,7 @@ class ZenFocus {
     }
     renderStats() {
         const s = this.getStats(), el = document.getElementById('focus-stats');
-        if (el) el.textContent = s.s ? `Hôm nay: ${s.s} phiên · ${s.m} phút tập trung 🌱` : 'Hôm nay bạn chưa có phiên nào. Bắt đầu thôi!';
+        if (el) el.textContent = s.s ? `Hôm nay: ${s.s} phiên · ${Math.round(s.m)} phút tập trung 🌱` : 'Hôm nay bạn chưa có phiên nào. Bắt đầu thôi!';
     }
 
     // ------------------------------------------------------------------ open / close
@@ -130,6 +146,8 @@ class ZenFocus {
     // ------------------------------------------------------------------ session control
     start(focusMin, breakMin, task) {
         this.cfg = { focus: focusMin, brk: breakMin, task: (task || '').trim().slice(0, 60) };
+        if (window.zenAudio) this.vol0 = window.zenAudio.masterVolume;
+        try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (_) { /* ignore */ }
         this.cleanBefore = this.isClean();
         this.closeModal();
         document.body.classList.add('focusing');
@@ -137,8 +155,8 @@ class ZenFocus {
         if (this.scenes.setCalm) this.scenes.setCalm(true);
         if (window.zenAudio) window.zenAudio.init();
         this.hud.classList.add('active');
-        this.elTask.textContent = this.cfg.task;
         this.beginPhase('focus');
+        this.refreshTaskLine();
         this.requestWake();
         this.wakeHud();
     }
@@ -149,6 +167,8 @@ class ZenFocus {
         this.endAt = Date.now() + this.total;
         this.running = true;
         this.hud.classList.toggle('break', phase === 'break');
+        this.duck(phase === 'break');
+        this.refreshTaskLine();
         this.elLabel.textContent = phase === 'focus' ? 'Tập trung' : 'Nghỉ ngơi một chút 🌿';
         this.hud.querySelector('[data-a="pause"]').textContent = '⏸';
         this.render();
@@ -164,10 +184,10 @@ class ZenFocus {
         if (this.phase === 'focus') {
             if (!skipped) this.addStats(this.cfg.focus);
             else { const done = Math.round((this.total - Math.max(0, this.endAt - Date.now())) / 60000); if (done >= 5) this.addStats(done); }
-            if (!skipped) { this.ring('bowl'); this.toast('Hoàn thành một phiên! Nghỉ ' + this.cfg.brk + ' phút nhé 💗'); }
+            if (!skipped) { this.ring('bowl'); this.toast('Hoàn thành một phiên! Nghỉ ' + this.cfg.brk + ' phút nhé 💗'); this.notify('Xong một phiên tập trung 🎉', 'Nghỉ ' + this.cfg.brk + ' phút nhé!'); }
             this.beginPhase('break');
         } else {
-            if (!skipped) { this.ring('chime'); this.toast('Hết giờ nghỉ, mình tiếp tục nhé ✨'); }
+            if (!skipped) { this.ring('chime'); this.toast('Hết giờ nghỉ, mình tiếp tục nhé ✨'); this.notify('Hết giờ nghỉ ✨', 'Mình tiếp tục nhé!'); }
             this.beginPhase('focus');
         }
     }
@@ -183,8 +203,59 @@ class ZenFocus {
         if (this.scenes.setCalm) this.scenes.setCalm(false);
         this.setClean(this.cleanBefore);
         document.title = this.baseTitle;
+        this.duck(false);
         this.releaseWake();
         this.toast('Đã kết thúc. Bạn làm tốt lắm! 🌸');
+    }
+
+    // ---- tasks (saved on this device)
+    loadTasks() { try { return JSON.parse(localStorage.getItem('zen-tasks')) || []; } catch (_) { return []; } }
+    saveTasks() { try { localStorage.setItem('zen-tasks', JSON.stringify(this.tasks)); } catch (_) { /* ignore */ } }
+    currentTask() { return this.tasks.find(t => !t.done); }
+    renderTasks() {
+        const ul = document.getElementById('ft-list');
+        if (!ul) return;
+        ul.innerHTML = '';
+        this.tasks.forEach((t, i) => {
+            const li = document.createElement('li');
+            if (t.done) li.className = 'done';
+            const cb = document.createElement('button'); cb.className = 'ft-check'; cb.textContent = t.done ? '✓' : '';
+            cb.addEventListener('click', () => { t.done = !t.done; this.saveTasks(); this.renderTasks(); this.refreshTaskLine(); });
+            const sp = document.createElement('span'); sp.textContent = t.t;
+            const rm = document.createElement('button'); rm.className = 'ft-del'; rm.textContent = '×';
+            rm.addEventListener('click', () => { this.tasks.splice(i, 1); this.saveTasks(); this.renderTasks(); this.refreshTaskLine(); });
+            li.append(cb, sp, rm); ul.appendChild(li);
+        });
+    }
+    refreshTaskLine() {
+        if (!this.elTask) return;
+        const cur = this.currentTask();
+        const text = this.cfg.task || (cur ? cur.t : '');
+        this.elTask.textContent = text;
+        this.hud.classList.toggle('has-tasks', !!cur);
+    }
+    completeTask() {
+        const cur = this.currentTask();
+        if (!cur) return;
+        cur.done = true; this.cfg.task = '';
+        this.saveTasks(); this.renderTasks(); this.refreshTaskLine();
+        this.toast(this.currentTask() ? 'Xong một việc! 🎉 Tiếp theo: ' + this.currentTask().t : 'Xong hết việc rồi, tuyệt vời! 🎉');
+    }
+
+    // ---- soft music during breaks
+    duck(on) {
+        const a = window.zenAudio;
+        if (!a || this.vol0 === undefined) return;
+        try { a.setMasterVolume(on ? this.vol0 * 0.35 : this.vol0); } catch (_) { /* ignore */ }
+    }
+
+    // ---- notification when the tab is in the background
+    notify(title, body) {
+        try {
+            if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, { body, icon: 'icons/icon-192.png', tag: 'zen-focus' });
+            }
+        } catch (_) { /* ignore */ }
     }
 
     ring(kind) {

@@ -274,6 +274,17 @@ function buildSakuraScene() {
         petals.instanceMatrix.needsUpdate = true;
     });
 
+    const polaroids = ZU.addPolaroids(scene, [
+        { pos: [-2.7, heightFn(-2.7, 2.5) + 0.3, 2.5], rot: [-0.35, 0.55, 0], scale: 1.0, w: 0.55 },
+        { pos: [-2.15, heightFn(-2.15, 2.8) + 0.3, 2.8], rot: [-0.35, 0.8, 0], scale: 0.95, w: 0.55 }
+    ]);
+    updates.push((dt, t) => ZU.swayPolaroids(polaroids, t));
+
+    const weather = {
+        names: ['Hoa rơi nhiều', 'Hoa rơi nhẹ', 'Lặng gió'], index: 0,
+        set(i) { this.index = i; petals.count = Math.floor(PN * [1, 0.3, 0][i]); }
+    };
+
     // ---------------------------------------------------------------- fireflies
     const FN = 110, fPos = new Float32Array(FN * 3), fCol = new Float32Array(FN * 3), fSize = new Float32Array(FN), fd = [];
     for (let i = 0; i < FN; i++) {
@@ -325,6 +336,8 @@ function buildSakuraScene() {
     return {
         scene,
         couple,
+        weather,
+        polaroids,
         update(dt, t) { updates.forEach(u => u(dt, t)); },
         onTap(pt, t) {
             const d = ((pt.x - pond.x) / pond.rx) ** 2 + ((pt.z - pond.z) / pond.rz) ** 2;

@@ -14,6 +14,10 @@
         from: clean(p.get('from') || ls('from'), 40),
         since: /^\d{4}-\d{2}-\d{2}$/.test(since) ? since : ''
     };
+    // remember what the link said, so "add to home screen" / offline launches keep the names and date
+    try {
+        ['for', 'from', 'since'].forEach(k => { const v = p.get(k); if (v) localStorage.setItem('zen-' + k, k === 'since' ? (window.ZEN_CONFIG.since || '') : clean(v, 40)); });
+    } catch (_) { /* ignore */ }
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -128,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.zenAudio) {
                 window.zenAudio.init();
                 const isMuted = window.zenAudio.toggleMute();
-                btnMute.textContent = isMuted ? '🔇 Bật âm thanh' : '🔊 Tắt âm thanh';
+                btnMute.textContent = isMuted ? '🔇' : '🔊';
                 btnMute.classList.toggle('muted', isMuted);
             }
         });
@@ -223,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btn) btn.click();      // reuse the preset logic for the current scene's sounds
         }
         showNav();
+        setTimeout(() => ZLove.celebrate(), 1400);
         // phones: tilt the device to look around (iOS asks for permission here, on a tap)
         if (scenes.enableTilt && window.matchMedia('(pointer: coarse)').matches) scenes.enableTilt();
     }
@@ -235,6 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const nav = document.getElementById('mini-nav');
         nav.classList.toggle('always', !on);
         showNav();
+        if (on) { toggleMenu(false); document.querySelector('.middle-row').classList.remove('show'); }
+        else if (!document.body.classList.contains('focusing')) setTimeout(showQuote, 700);
     }
     document.getElementById('btn-toggle-ui').addEventListener('click', () => setClean(!document.body.classList.contains('clean')));
     document.getElementById('btn-hide-ui').addEventListener('click', () => setClean(true));
@@ -291,20 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // love letter: a different sweet message every day
-    const LINES = [
-        'Hôm nay dù có mệt đến đâu, em cũng đã làm rất tốt rồi. Anh tự hào về em.',
-        'Có em, những ngày mưa cũng trở nên ấm áp.',
-        'Cảm ơn em vì đã xuất hiện trong cuộc đời anh.',
-        'Nếu hôm nay có điều gì khiến em buồn, hãy nhớ rằng anh luôn ở đây để lắng nghe em.',
-        'Nụ cười của em là điều đẹp nhất anh từng được nhìn thấy.',
-        'Anh không hứa sẽ hoàn hảo, nhưng anh hứa sẽ luôn ở bên em.',
-        'Em cứ nghỉ ngơi đi, mọi chuyện còn lại để anh cùng em lo.',
-        'Mỗi ngày trôi qua, anh lại thương em nhiều hơn một chút.',
-        'Dù thế giới có ồn ào đến đâu, bên em vẫn là nơi bình yên nhất.',
-        'Nhớ uống đủ nước, ăn đủ bữa và ngủ thật ngon nhé, người thương của anh.',
-        'Anh muốn cùng em ngắm thật nhiều hoàng hôn như thế này.',
-        'Em là điều dịu dàng nhất mà cuộc sống đã dành cho anh.'
-    ];
+    const LINES = ZLove.letterLines();
     let lineIdx = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000) % LINES.length;
     const letterModal = document.getElementById('letter-modal');
     function fillLetter() {
@@ -314,21 +308,79 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('letter-sign').textContent = '— ' + (CFG.from || 'Anh');
     }
     const btnLetter = document.getElementById('btn-letter');
-    btnLetter.addEventListener('click', () => {
+    function toggleLetter() {
         fillLetter();
         letterModal.classList.toggle('active');
         btnLetter.classList.remove('pulse-hint');
-    });
+    }
+    btnLetter.addEventListener('click', toggleLetter);
+    document.getElementById('btn-letter-h').addEventListener('click', toggleLetter);
     document.getElementById('btn-letter-next').addEventListener('click', () => {
         lineIdx = (lineIdx + 1) % LINES.length;
         fillLetter();
     });
     setTimeout(() => btnLetter.classList.remove('pulse-hint'), 60000);
 
+    // ---------------- tools menu, mixer, quote toast, weather, gallery ----------------
+    const toolsMenu = document.getElementById('tools-menu');
+    const btnTools = document.getElementById('btn-tools');
+    function placeMenu() {
+        if (innerWidth <= 720 || (innerHeight <= 520 && innerWidth > innerHeight)) return;   // phones use the CSS bottom sheet
+        const r = btnTools.getBoundingClientRect(), w = toolsMenu.offsetWidth || 310;
+        toolsMenu.style.top = (r.bottom + 8) + 'px';
+        toolsMenu.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
+    }
+    function toggleMenu(force) {
+        const open = force !== undefined ? force : !toolsMenu.classList.contains('open');
+        if (open) placeMenu();
+        toolsMenu.classList.toggle('open', open);
+        btnTools.classList.toggle('active', open);
+    }
+    btnTools.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
+    document.addEventListener('pointerdown', (e) => {
+        if (toolsMenu.classList.contains('open') && !toolsMenu.contains(e.target) && !btnTools.contains(e.target)) toggleMenu(false);
+    });
+    toolsMenu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => toggleMenu(false)));
+    window.addEventListener('resize', () => toggleMenu(false));
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleMenu(false); });
+
+    const btnMixer = document.getElementById('btn-mixer');
+    btnMixer.addEventListener('click', () => btnMixer.classList.toggle('active', document.body.classList.toggle('mixer-open')));
+
+    const midRow = document.querySelector('.middle-row');
+    let quoteT = null;
+    function showQuote() {
+        if (document.body.classList.contains('clean')) return;
+        tools.drawQuote();
+        midRow.classList.add('show');
+        clearTimeout(quoteT);
+        quoteT = setTimeout(() => midRow.classList.remove('show'), 10000);
+    }
+    document.getElementById('btn-show-quote').addEventListener('click', () => setTimeout(showQuote, 150));
+    document.getElementById('btn-new-quote').addEventListener('click', () => { clearTimeout(quoteT); quoteT = setTimeout(() => midRow.classList.remove('show'), 10000); });
+
+    const weatherLabel = document.getElementById('weather-label');
+    function syncWeather() { if (scenes.weatherName && weatherLabel) weatherLabel.textContent = scenes.weatherName(); }
+    document.getElementById('btn-weather').addEventListener('click', () => {
+        if (!scenes.cycleWeather) return;
+        scenes.cycleWeather();
+        syncWeather();
+        ZLove.toast('🌦️ ' + scenes.weatherName(), 2200);
+    });
+    scenes.onChange = syncWeather;
+    syncWeather();
+
+    document.getElementById('btn-gallery').addEventListener('click', () => ZLove.openGallery());
+
     // focus mode (Pomodoro)
     const focus = new ZenFocus({ scenes, setClean, isClean: () => document.body.classList.contains('clean') });
     window.__focus = focus;
     ['btn-open-focus', 'btn-focus'].forEach(id => { const b = document.getElementById(id); if (b) b.addEventListener('click', () => focus.open()); });
+
+    // offline + install support
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+        navigator.serviceWorker.register('sw.js').catch(() => { /* ignore */ });
+    }
 
     // 60 FPS Render Loop
     function animate() {

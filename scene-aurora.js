@@ -271,6 +271,17 @@ function buildAuroraScene() {
     scene.add(camp);
     updates.push((dt, t) => { couple.update(dt, t); lampLight.intensity = 0.85 + Math.sin(t * 6) * 0.1; });
 
+    const polaroids = ZU.addPolaroids(scene, [
+        { pos: [2.9, 0.34, -3.1], rot: [-0.35, 0.45, 0], scale: 0.9, w: 0.5 },
+        { pos: [2.45, 0.32, -2.8], rot: [-0.35, 0.7, 0], scale: 0.85, w: 0.5 }
+    ]);
+    updates.push((dt, t) => ZU.swayPolaroids(polaroids, t));
+
+    const weather = {
+        names: ['Tuyết rơi', 'Tuyết nhẹ', 'Trời quang'], index: 0,
+        set(i) { this.index = i; snowGeo.setDrawRange(0, Math.floor(SN * [1, 0.3, 0][i])); }
+    };
+
     // ---------------------------------------------------------------- sky lanterns
     const lanterns = [];
     const lanternBodyGeo = new THREE.CylinderGeometry(0.34, 0.24, 0.62, 14, 1, true);
@@ -339,6 +350,8 @@ function buildAuroraScene() {
     return {
         scene,
         couple,
+        weather,
+        polaroids,
         update(dt, t, ctx) { updates.forEach(u => u(dt, t, ctx)); },
         launchLantern,
         cfg: {
