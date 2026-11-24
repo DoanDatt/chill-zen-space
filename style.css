@@ -863,3 +863,6 @@ body:not(.clean) #dedication { top: 82px; font-size: 13px; opacity: .75; }
     .scene-btn:not(.active) .t { display: inline; }
 }
 @media (max-width: 460px) { .logo-text { display: none; } }
+
+/* when the tools are hidden, hide the dedication as well so only the scene remains */
+body.clean #dedication { opacity: 0 !important; }

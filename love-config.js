@@ -2,10 +2,13 @@
  * ✏️  FILE NÀY LÀ NƠI BẠN VIẾT NỘI DUNG RIÊNG CHO NGƯỜI ẤY.
  * Chỉ cần sửa các dòng bên dưới rồi lưu lại (xong đẩy lên web là được). Không cần biết lập trình.
  *
- * Tên người nhận, tên của bạn và ngày bắt đầu yêu nhau được đặt ở đường link
- * (hoặc bấm 🧰 Công cụ → ✏️ Cài đặt):   ...?for=Linh&from=Đạt&since=2024-02-14
+ * Tên đã được cố định là "Đạt" và "bé Hạnh". Ngày bắt đầu yêu nhau điền ở dòng `since` bên dưới
+ * (hoặc bấm 🧰 Công cụ → ✏️ Cài đặt, hoặc thêm vào link ?since=2024-02-14).
  */
 window.LOVE = {
+
+    // 💞 Ngày bắt đầu yêu nhau, dạng 'năm-tháng-ngày' (ví dụ '2024-02-14'). Để trống '' thì không hiện bộ đếm ngày.
+    since: '',
 
     // 💌 Những lời nhắn trong lá thư. Mỗi ngày thư hiện một câu (xoay vòng), bấm "Lời nhắn khác" để đọc thêm.
     //    Hãy thay bằng lời của riêng bạn: kỷ niệm, biệt danh, những điều chỉ hai người hiểu...

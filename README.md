@@ -1,4 +1,4 @@
-# ZenHaven - Dành tặng em 💗
+# ZenHaven - Đạt dành tặng bé Hạnh 💗
 
 Một góc bình yên nhỏ bằng 3D: 4 cảnh (mưa bên lò sưởi, cực quang, biển hoàng hôn, rừng đào), mỗi cảnh có một cặp đôi
 ngồi cạnh nhau, nhạc nền thư giãn, chế độ tập trung (Pomodoro), thư tình mỗi ngày và pháo hoa vào ngày kỷ niệm.
@@ -7,20 +7,12 @@ Trang web tĩnh, không cần cài đặt hay build. Mở `index.html` hoặc đ
 
 ## Cá nhân hóa (chỉ cần sửa 2 chỗ)
 
-### 1) Đường link: tên và ngày yêu nhau
-```
-https://doandatt.github.io/chill-zen-space/?for=Linh&from=Đạt&since=2024-02-14
-```
-| Tham số | Ý nghĩa |
-|---|---|
-| `for`   | tên người nhận ("Dành tặng Linh") |
-| `from`  | tên của bạn (ký tên trong thư, trên bảng gỗ) |
-| `since` | ngày bắt đầu yêu nhau, dạng `YYYY-MM-DD` (hiện bộ đếm ngày, kỷ niệm, cột mốc) |
-| `bday`  | sinh nhật của em, dạng `MM-DD` (tùy chọn) |
-
-Có thể bấm **🧰 Công cụ → ✏️ Cài đặt** để nhập, trang sẽ tạo sẵn link để gửi.
+### 1) Tên và ngày
+Tên đã cố định là **Đạt** và **bé Hạnh** (trong `app.js`, mục `ZEN_CONFIG`). Ngày bắt đầu yêu nhau điền vào `since` trong `love-config.js`,
+hoặc thêm vào link `?since=2024-02-14`, hoặc bấm **🧰 Công cụ → ✏️ Cài đặt**. Sinh nhật dạng `?bday=08-21` (hoặc điền `birthday` trong `love-config.js`).
 
 ### 2) File `love-config.js`: lời nhắn, ngày đặc biệt, ảnh
+- **since**: ngày bắt đầu yêu nhau.
 - **letters**: các lời nhắn trong lá thư 💌 (mỗi ngày một câu).
 - **birthday / specialDates / milestoneDays / messages**: ngày đặc biệt, pháo hoa và câu chúc.
 - **photos**: ảnh kỷ niệm. Bỏ ảnh vào thư mục `photos/` rồi khai báo, ví dụ

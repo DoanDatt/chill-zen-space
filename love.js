@@ -4,7 +4,7 @@
  */
 const ZLove = (() => {
     const L = window.LOVE || {};
-    const cfg = () => window.ZEN_CONFIG || { for: 'em', from: '', since: '' };
+    const cfg = () => window.ZEN_CONFIG || { for: 'Hạnh', nick: 'bé Hạnh', from: 'Đạt', since: '' };
     const DEFAULT_LETTERS = ['Có em, những ngày mưa cũng trở nên ấm áp.', 'Cảm ơn em vì đã xuất hiện trong cuộc đời anh.'];
     const photos = (L.photos || []).filter(p => p && p.src);
     const pad = (n) => (n < 10 ? '0' : '') + n;
@@ -82,7 +82,7 @@ const ZLove = (() => {
     function todaysEvents(force) {
         const c = cfg(), now = new Date(), y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
         const md = pad(m) + '-' + pad(d);
-        const vars = { name: c.for === 'em' ? 'em' : c.for, from: c.from || 'anh' };
+        const vars = { name: c.nick || c.for, from: c.from || 'anh' };
         const msg = (k, n) => { const t = (L.messages || {})[k] || {}; return { title: fill(t.title, Object.assign({ n }, vars)), text: fill(t.text, Object.assign({ n }, vars)) }; };
         const ev = [];
         const s = dateParts(c.since);
@@ -97,7 +97,9 @@ const ZLove = (() => {
             const days = daysSince();
             if ((L.milestoneDays || []).includes(days)) ev.push(Object.assign({ kind: 'milestone', emoji: '🏆', key: 'ms' + days }, msg('milestone', days)));
         }
-        const bd = (new URLSearchParams(location.search).get('bday') || L.birthday || '').trim();
+        let stored = '';
+        try { stored = localStorage.getItem('zen-bday') || ''; } catch (_) { /* ignore */ }
+        const bd = (new URLSearchParams(location.search).get('bday') || stored || L.birthday || '').trim();
         if (bd && bd === md) ev.push(Object.assign({ kind: 'birthday', emoji: '🎂', key: 'bd' }, msg('birthday', 0)));
         (L.specialDates || []).forEach((e, i) => {
             if (e && e.date === md) ev.push({ kind: 'special', emoji: e.emoji || '🎉', key: 'sp' + i, title: fill(e.title || 'Hôm nay là ngày đặc biệt', vars), text: fill(e.message || '', vars) });

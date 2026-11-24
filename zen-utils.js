@@ -294,7 +294,7 @@ const ZU = (() => {
     }
 
     function signParts() {
-        const c = window.ZEN_CONFIG || { for: 'em', from: '' };
+        const c = window.ZEN_CONFIG || { for: 'Hạnh', from: 'Đạt' };
         if (c.from) return [{ t: c.from + ' ' }, { t: '♥', heart: true }, { t: ' ' + c.for }];
         return [{ t: '♥ ', heart: true }, { t: c.for === 'em' ? 'Mãi bên nhau' : c.for }, { t: ' ♥', heart: true }];
     }

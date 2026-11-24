@@ -3,21 +3,19 @@
  * Handles 4 Scene transitions, Ambient Audio Mixer presets, Zen Tools & Interactivity
  */
 
-// Personal settings: ?for=Name&from=Name&since=YYYY-MM-DD (also remembered in localStorage)
+// Personal settings. The names are fixed; only the dates can be set (love-config.js, ?since=YYYY-MM-DD&bday=MM-DD, or the Settings button).
 (function () {
     const p = new URLSearchParams(location.search);
     const ls = (k) => { try { return localStorage.getItem('zen-' + k) || ''; } catch (_) { return ''; } };
-    const clean = (s, n) => (s || '').trim().slice(0, n);
-    const since = p.get('since') || ls('since');
+    const valid = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : '');
+    const since = valid(p.get('since')) || valid(ls('since')) || valid(window.LOVE && window.LOVE.since);
     window.ZEN_CONFIG = {
-        for: clean(p.get('for') || ls('for'), 40) || 'em',
-        from: clean(p.get('from') || ls('from'), 40),
-        since: /^\d{4}-\d{2}-\d{2}$/.test(since) ? since : ''
+        for: 'Hạnh',          // used on the wooden signs: "Đạt ♥ Hạnh"
+        nick: 'bé Hạnh',      // used in greetings: "Dành tặng bé Hạnh"
+        from: 'Đạt',
+        since
     };
-    // remember what the link said, so "add to home screen" / offline launches keep the names and date
-    try {
-        ['for', 'from', 'since'].forEach(k => { const v = p.get(k); if (v) localStorage.setItem('zen-' + k, k === 'since' ? (window.ZEN_CONFIG.since || '') : clean(v, 40)); });
-    } catch (_) { /* ignore */ }
+    try { const v = valid(p.get('since')); if (v) localStorage.setItem('zen-since', v); } catch (_) { /* ignore */ }
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -203,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
     };
     function applyName() {
-        const label = CFG.for;
+        const label = CFG.nick;
         const t1 = document.getElementById('ded-text');
         const t2 = document.getElementById('intro-name');
         if (t1) t1.textContent = 'Dành tặng ' + label + (CFG.since ? '  ·  💞 ' + daysTogether() + ' ngày bên nhau' : '');
@@ -278,23 +276,21 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('pointermove', showNav);
     window.addEventListener('pointerdown', showNav);
 
-    // settings: names + the day you got together. Produces a ready-to-send link.
+    // settings: the day you got together and her birthday (names are fixed: Đạt & bé Hạnh)
     document.getElementById('btn-set-name').addEventListener('click', () => {
-        const her = prompt('Tên người nhận (hiện ở dòng "Dành tặng ..."):', CFG.for === 'em' ? '' : CFG.for);
-        if (her === null) return;
-        const me = prompt('Tên của bạn (ký tên trong thư, trên bảng gỗ). Để trống = "Anh":', CFG.from);
-        if (me === null) return;
         const day = prompt('Ngày bắt đầu yêu nhau (định dạng 2024-02-14). Để trống nếu không muốn hiện bộ đếm:', CFG.since);
         if (day === null) return;
+        let bd = '';
+        try { bd = localStorage.getItem('zen-bday') || ''; } catch (_) { /* ignore */ }
+        const bday = prompt('Sinh nhật của bé Hạnh (định dạng tháng-ngày, ví dụ 08-21). Để trống nếu không muốn:', bd);
+        if (bday === null) return;
         const u = new URLSearchParams();
-        const vals = { for: her.trim().slice(0, 40), from: me.trim().slice(0, 40), since: /^\d{4}-\d{2}-\d{2}$/.test(day.trim()) ? day.trim() : '' };
+        const vals = { since: /^\d{4}-\d{2}-\d{2}$/.test(day.trim()) ? day.trim() : '', bday: /^\d{2}-\d{2}$/.test(bday.trim()) ? bday.trim() : '' };
         Object.keys(vals).forEach(k => {
             try { localStorage.setItem('zen-' + k, vals[k]); } catch (_) { /* ignore */ }
             if (vals[k]) u.set(k, vals[k]);
         });
-        const link = location.origin + location.pathname + (u.toString() ? '?' + u.toString() : '');
-        prompt('Link gửi cho người ấy (Ctrl+C để sao chép). Trang sẽ tải lại để áp dụng:', link);
-        location.href = link;
+        location.href = location.origin + location.pathname + (u.toString() ? '?' + u.toString() : '');
     });
 
     // love letter: a different sweet message every day
@@ -302,10 +298,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let lineIdx = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000) % LINES.length;
     const letterModal = document.getElementById('letter-modal');
     function fillLetter() {
-        document.getElementById('letter-to').textContent = 'Gửi ' + CFG.for + ',';
+        document.getElementById('letter-to').textContent = 'Gửi ' + CFG.nick + ',';
         document.getElementById('letter-body').textContent = LINES[lineIdx];
         document.getElementById('letter-days').textContent = CFG.since ? 'Đã ' + daysTogether() + ' ngày mình bên nhau, và anh muốn còn thật nhiều ngày nữa. 💞' : '';
-        document.getElementById('letter-sign').textContent = '— ' + (CFG.from || 'Anh');
+        document.getElementById('letter-sign').textContent = '— ' + CFG.from;
     }
     const btnLetter = document.getElementById('btn-letter');
     function toggleLetter() {
