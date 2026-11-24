@@ -256,6 +256,21 @@ function buildAuroraScene() {
     const owl = createOwl(); scene.add(owl.mesh);
     updates.push((dt) => { fox.update(dt); herd.update(dt); owl.update(dt); });
 
+    // a couple wrapped up warm on a blanket, watching the aurora, with a small lantern
+    const couple = ZCouple.makeCouple({ ground: true, outfit: 'winter', mat: true });
+    couple.mesh.scale.setScalar(1.15);
+    couple.mesh.position.set(4.9, 0.17 * 1.15, -4.0);
+    couple.mesh.rotation.y = Math.PI + 0.25;
+    ZU.shadowAll(couple.mesh, true);
+    scene.add(couple.mesh);
+    const camp = new THREE.Group(); camp.position.set(3.5, 0, -3.3);
+    const lampBody = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.24, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0xffc46b, side: THREE.DoubleSide }));
+    lampBody.position.y = 0.14; camp.add(lampBody);
+    const lampGlow = glowSprite(0xffb05a, 0.8, 0.4); lampGlow.position.y = 0.2; camp.add(lampGlow);
+    const lampLight = new THREE.PointLight(0xffb86b, 0.9, 7, 2); lampLight.position.y = 0.5; camp.add(lampLight);
+    scene.add(camp);
+    updates.push((dt, t) => { couple.update(dt, t); lampLight.intensity = 0.85 + Math.sin(t * 6) * 0.1; });
+
     // ---------------------------------------------------------------- sky lanterns
     const lanterns = [];
     const lanternBodyGeo = new THREE.CylinderGeometry(0.34, 0.24, 0.62, 14, 1, true);
@@ -323,6 +338,7 @@ function buildAuroraScene() {
 
     return {
         scene,
+        couple,
         update(dt, t, ctx) { updates.forEach(u => u(dt, t, ctx)); },
         launchLantern,
         cfg: {

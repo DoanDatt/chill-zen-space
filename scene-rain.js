@@ -332,22 +332,19 @@ function buildRainScene() {
     scene.add(chair);
 
     // ---------------------------------------------------------------- sofa + plaid blanket
-    const sofa = new THREE.Group(); sofa.position.set(-4.4, 0, -1.6); sofa.rotation.y = 0.45;
+    // low sofa with a couple snuggling under a plaid blanket
+    const sofa = new THREE.Group(); sofa.position.set(-3.9, 0, -1.6); sofa.rotation.y = 0.5;
     const sofaMat = stdMat(0x8a4a44, 0.95);
-    box(sofa, 3.0, 0.55, 1.2, sofaMat, 0, 0.45, 0);
-    box(sofa, 3.0, 1.0, 0.35, sofaMat, 0, 1.0, -0.5);
-    box(sofa, 0.35, 0.85, 1.2, sofaMat, -1.5, 0.7, 0);
-    box(sofa, 0.35, 0.85, 1.2, sofaMat, 1.5, 0.7, 0);
-    box(sofa, 2.5, 0.2, 0.95, stdMat(0xa05a52, 0.95), 0, 0.82, 0.1);
-    [[-0.9, 0xe8c27a], [0.7, 0x6f9a92]].forEach(c => { const cu = box(sofa, 0.6, 0.55, 0.18, stdMat(c[1], 0.95), c[0], 1.1, -0.25); cu.rotation.z = c[0] * 0.2; cu.rotation.x = -0.25; });
-    const plaid = canvasTex(128, 128, (g, w, h) => {
-        g.fillStyle = '#c0553b'; g.fillRect(0, 0, w, h);
-        g.fillStyle = 'rgba(30,20,40,0.55)'; for (let i = 0; i < 4; i++) { g.fillRect(i * 32 + 8, 0, 10, h); g.fillRect(0, i * 32 + 8, w, 10); }
-        g.fillStyle = 'rgba(255,230,190,0.5)'; for (let i = 0; i < 4; i++) { g.fillRect(i * 32 + 24, 0, 3, h); g.fillRect(0, i * 32 + 24, w, 3); }
-    });
-    const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 0.9), new THREE.MeshStandardMaterial({ map: plaid, roughness: 1 }));
-    blanket.position.set(0.55, 0.95, 0.25); blanket.rotation.set(0.12, -0.2, 0.18);
-    sofa.add(blanket);
+    box(sofa, 3.0, 0.3, 1.2, sofaMat, 0, 0.25, 0);
+    box(sofa, 3.0, 1.0, 0.35, sofaMat, 0, 0.6, -0.5);
+    box(sofa, 0.35, 0.6, 1.2, sofaMat, -1.5, 0.4, 0);
+    box(sofa, 0.35, 0.6, 1.2, sofaMat, 1.5, 0.4, 0);
+    box(sofa, 2.5, 0.15, 0.95, stdMat(0xa05a52, 0.95), 0, 0.475, 0.1);
+    const couple = ZCouple.makeCouple({ outfit: 'cozy', blanket: true });
+    couple.mesh.scale.setScalar(1.3); couple.mesh.position.set(0, 0.68, 0.0);
+    ZU.shadowAll(couple.mesh, true);
+    sofa.add(couple.mesh);
+    updates.push((dt, t) => couple.update(dt, t));
     scene.add(sofa);
 
     // ---------------------------------------------------------------- rug + cat
@@ -455,6 +452,7 @@ function buildRainScene() {
 
     return {
         scene,
+        couple,
         update(dt, t) { updates.forEach(u => u(dt, t)); },
         pettable: cat.mesh,
         onPet,

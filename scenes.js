@@ -42,6 +42,7 @@ class ZenScenes {
         this.zoom = 1; this.targetZoom = 1;
         this.dragging = false; this.dragMoved = 0; this.lastX = 0; this.lastY = 0;
         this.hearts = [];
+        this.calm = false;
         this.raycaster = new THREE.Raycaster();
 
         this.initPost();
@@ -203,6 +204,9 @@ class ZenScenes {
         if (window.zenAudio) window.zenAudio.playChime();
     }
 
+    // focus mode: the scene barely reacts to the mouse so nothing distracts you
+    setCalm(v) { this.calm = !!v; }
+
     // ------------------------------------------------------------------ interaction
     handleTap(cx, cy) {
         if (!this.world) return;
@@ -211,6 +215,10 @@ class ZenScenes {
         if (this.world.pettable) {
             const hits = this.raycaster.intersectObject(this.world.pettable, true);
             if (hits.length) { this.petCat(); return; }
+        }
+        if (this.world.couple) {
+            const hits = this.raycaster.intersectObject(this.world.couple.mesh, true);
+            if (hits.length) { this.world.couple.react(); return; }
         }
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.05);
         const pt = new THREE.Vector3();
@@ -271,8 +279,9 @@ class ZenScenes {
 
         const idleYaw = Math.sin(this.time * 0.11) * 0.035;
         const idlePitch = Math.sin(this.time * 0.17 + 1.3) * 0.012;
-        let tYaw = this.dragYaw - this.smMouseX * cfg.hoverYaw + idleYaw;
-        let tPitch = this.dragPitch + this.smMouseY * cfg.hoverPitch + idlePitch;
+        const hs = this.calm ? 0.25 : 1;
+        let tYaw = this.dragYaw - this.smMouseX * cfg.hoverYaw * hs + idleYaw;
+        let tPitch = this.dragPitch + this.smMouseY * cfg.hoverPitch * hs + idlePitch;
         tYaw = Math.max(-cfg.maxYaw, Math.min(cfg.maxYaw, tYaw));
         tPitch = Math.max(cfg.minPitch, Math.min(cfg.maxPitch, tPitch));
         const k2 = dt === 0 ? 1 : 1 - Math.exp(-dt * 5);

@@ -532,3 +532,60 @@ body:not(.clean) #mini-nav.always { opacity: 1; pointer-events: auto; }
 .letter-sign { text-align: right; font-size: 18px; color: #8a3b4f; margin-top: 8px; }
 .mini-btn.pulse-hint { animation: letterPulse 2s ease-in-out infinite; }
 @keyframes letterPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 130, 170, .0); } 50% { box-shadow: 0 0 0 7px rgba(255, 130, 170, .35); } }
+
+
+/* ================= Focus mode ================= */
+.focus-modal { max-width: min(92vw, 420px); }
+.focus-input {
+    margin-top: 14px; width: 100%; padding: 10px 14px; border-radius: 12px; font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .08); color: #fff; outline: none;
+}
+.focus-input:focus { border-color: #fda4af; box-shadow: 0 0 0 3px rgba(253, 164, 175, .2); }
+.focus-input::placeholder { color: #8b97ab; }
+.focus-presets { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+.focus-presets button { display: flex; flex-direction: column; gap: 2px; padding: 10px 18px; }
+.focus-presets small { opacity: .7; font-size: 11px; }
+.focus-custom { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; font-size: 13px; color: #cbd5e1; }
+.focus-custom input {
+    width: 58px; padding: 6px 8px; border-radius: 8px; text-align: center; font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .08); color: #fff; outline: none;
+}
+.focus-stats { margin-top: 14px; font-size: 13px; color: #fda4af; }
+.focus-tip { margin-top: 8px; font-size: 11px; color: #7b879b; }
+
+#focus-hud {
+    position: fixed; top: 18px; left: 50%; transform: translate(-50%, -34px); z-index: 14;
+    display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 10px; border-radius: 999px; color: #fff;
+    background: rgba(15, 23, 42, .5); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, .16); box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
+    opacity: 0; pointer-events: none; transition: opacity .6s ease, transform .6s ease, background .6s ease;
+    font-family: 'Segoe UI', -apple-system, Roboto, sans-serif;
+}
+#focus-hud.active { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.fh-ring { width: 46px; height: 46px; flex: none; }
+.fh-ring circle { fill: none; stroke-width: 3; }
+.fh-ring .bg { stroke: rgba(255, 255, 255, .18); }
+.fh-ring .fg { stroke: #ff9fbf; stroke-linecap: round; transition: stroke-dashoffset .3s linear, stroke .6s; }
+#focus-hud.break .fh-ring .fg { stroke: #7be0c3; }
+.fh-time { font-size: 30px; font-weight: 300; letter-spacing: 1px; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 1px 8px rgba(0, 0, 0, .5); }
+.fh-label { font-size: 11px; opacity: .85; margin-top: 3px; }
+.fh-task { font-size: 12px; opacity: .95; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; color: #ffd9e4; }
+.fh-task:empty { display: none; }
+.fh-btns { display: flex; gap: 4px; }
+.fh-btns button { width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer; background: rgba(255, 255, 255, .12); color: #fff; font-size: 14px; transition: background .2s, transform .2s; }
+.fh-btns button:hover { background: rgba(255, 255, 255, .28); transform: scale(1.1); }
+#focus-hud.compact { background: rgba(15, 23, 42, .22); border-color: rgba(255, 255, 255, .06); box-shadow: none; padding: 6px 14px 6px 8px; }
+#focus-hud.compact .fh-btns, #focus-hud.compact .fh-task, #focus-hud.compact .fh-label { display: none; }
+#focus-hud.compact .fh-ring { width: 34px; height: 34px; }
+#focus-hud.compact .fh-time { font-size: 24px; }
+body.focusing #dedication { opacity: 0 !important; }
+body.focusing #mini-nav .mini-btn#btn-letter { display: none; }
+
+#focus-toast {
+    position: fixed; top: 96px; left: 50%; transform: translate(-50%, -8px); z-index: 15; pointer-events: none;
+    padding: 9px 20px; border-radius: 999px; font-size: 14px; color: #fff; max-width: 90vw; text-align: center;
+    background: rgba(40, 18, 40, .72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 190, 215, .35); opacity: 0; transition: opacity .5s, transform .5s;
+}
+#focus-toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 600px) { .fh-time { font-size: 26px; } .fh-task { max-width: 130px; } }

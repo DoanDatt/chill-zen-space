@@ -239,15 +239,19 @@ function buildBeachScene() {
     const blanket = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.05, 2.2), new THREE.MeshStandardMaterial({ map: picTex, roughness: 1 }));
     blanket.position.set(px, py, pz); blanket.rotation.y = 0.18; blanket.receiveShadow = true; scene.add(blanket);
     const pic = new THREE.Group(); pic.position.set(px, py, pz); pic.rotation.y = 0.18; scene.add(pic);
-    [[-0.7, -0.35, 0xe8c27a], [-0.2, -0.45, 0xd99a9a]].forEach(c => {
-        const cu = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 8), stdMat(c[2], 1));
-        cu.scale.set(1, 0.45, 0.8); cu.position.set(c[0], 0.2, c[1] + 0.9); cu.castShadow = true; pic.add(cu);
-    });
+    // the couple watches the sunset from the blanket
+    const couple = ZCouple.makeCouple({ ground: true, outfit: 'summer' });
+    couple.mesh.scale.setScalar(1.2);
+    couple.mesh.position.set(-0.3, 0.17 * 1.2 + 0.03, 0.35);
+    couple.mesh.rotation.y = Math.PI;
+    ZU.shadowAll(couple.mesh, true);
+    pic.add(couple.mesh);
+    updates.push((dt, t) => couple.update(dt, t));
     // basket
     box(pic, 0.6, 0.34, 0.42, stdMat(0xa8744a, 1), 0.85, 0.2, -0.3);
     const handle = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 6, 14, Math.PI), stdMat(0x7a4f2e, 1)); handle.position.set(0.85, 0.37, -0.3); pic.add(handle);
     // two glasses of juice
-    [[-0.1, 0.1], [0.2, 0.25]].forEach(p => {
+    [[0.35, -0.55], [0.58, -0.42]].forEach(p => {
         const gl = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.055, 0.2, 10), new THREE.MeshStandardMaterial({ color: 0xffc27a, transparent: true, opacity: 0.75, roughness: 0.1 }));
         gl.position.set(p[0], 0.13, p[1]); pic.add(gl);
     });
@@ -296,6 +300,7 @@ function buildBeachScene() {
 
     return {
         scene,
+        couple,
         update(dt, t, ctx) { updates.forEach(u => u(dt, t, ctx)); },
         cfg: {
             target: new THREE.Vector3(0, 2.0, -8), dist: 19, camY: 3.6, fov: 54,

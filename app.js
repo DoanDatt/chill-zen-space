@@ -322,6 +322,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     setTimeout(() => btnLetter.classList.remove('pulse-hint'), 60000);
 
+    // focus mode (Pomodoro)
+    const focus = new ZenFocus({ scenes, setClean, isClean: () => document.body.classList.contains('clean') });
+    window.__focus = focus;
+    ['btn-open-focus', 'btn-focus'].forEach(id => { const b = document.getElementById(id); if (b) b.addEventListener('click', () => focus.open()); });
+
     // 60 FPS Render Loop
     function animate() {
         requestAnimationFrame(animate);

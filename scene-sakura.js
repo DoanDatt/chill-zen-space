@@ -217,6 +217,19 @@ function buildSakuraScene() {
     const toroGlow = glowSprite(0xffb86b, 2.8, 0.7); toroGlow.position.set(6.0, 1.75, 0.5); scene.add(toroGlow);
     updates.push((dt, t) => { toroLight.intensity = 1.35 + Math.sin(t * 5.3) * 0.12 + Math.sin(t * 13) * 0.05; });
 
+    // a bench behind the pond with a couple sitting under the falling petals
+    const bench = new THREE.Group(); bench.position.set(1.7, heightFn(1.7, -5.9), -5.9);
+    const benchWood = stdMat(0x8a5a38, 0.9, 0, { flatShading: true });
+    box(bench, 1.9, 0.08, 0.5, benchWood, 0, 0.45, 0);
+    box(bench, 1.9, 0.5, 0.06, benchWood, 0, 0.82, -0.3).rotation.x = -0.12;
+    [[-0.8, -0.18], [0.8, -0.18], [-0.8, 0.18], [0.8, 0.18]].forEach(p => box(bench, 0.08, 0.45, 0.08, benchWood, p[0], 0.225, p[1]));
+    const couple = ZCouple.makeCouple({ outfit: 'spring' });
+    couple.mesh.scale.setScalar(1.2); couple.mesh.position.set(0, 0.61, -0.03);
+    ZU.shadowAll(couple.mesh, true);
+    bench.add(couple.mesh);
+    scene.add(bench);
+    updates.push((dt, t) => couple.update(dt, t));
+
     // wooden sign: "A ♥ B"
     const sign = ZU.makeSign(ZU.signParts());
     sign.position.set(-3.6, heightFn(-3.6, 1.6), 1.6); sign.rotation.y = 0.35; sign.scale.setScalar(1.15);
@@ -311,6 +324,7 @@ function buildSakuraScene() {
 
     return {
         scene,
+        couple,
         update(dt, t) { updates.forEach(u => u(dt, t)); },
         onTap(pt, t) {
             const d = ((pt.x - pond.x) / pond.rx) ** 2 + ((pt.z - pond.z) / pond.rz) ** 2;
