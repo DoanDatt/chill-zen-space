@@ -43,6 +43,8 @@ class ZenScenes {
         this.dragging = false; this.dragMoved = 0; this.lastX = 0; this.lastY = 0;
         this.hearts = [];
         this.calm = false;
+        this.pointers = new Map(); this.pinchPrev = 0;
+        this.tiltX = 0; this.tiltY = 0; this.smTX = 0; this.smTY = 0; this.tiltOn = false;
         this.raycaster = new THREE.Raycaster();
 
         this.initPost();
@@ -81,9 +83,16 @@ class ZenScenes {
         window.addEventListener('resize', () => this.resize());
 
         window.addEventListener('pointermove', (e) => {
-            if (e.pointerType === 'mouse' || this.dragging) {
+            if (e.pointerType === 'mouse') {          // hover-rotation is for mouse only; touch uses drag / tilt
                 this.mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
                 this.mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+            }
+            if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (this.pointers.size === 2) {           // pinch to zoom
+                const d = this.pinchDist();
+                if (this.pinchPrev > 0 && d > 0) this.targetZoom = Math.min(1.35, Math.max(0.6, this.targetZoom * this.pinchPrev / d));
+                this.pinchPrev = d;
+                return;
             }
             if (this.dragging) {
                 const dx = e.clientX - this.lastX, dy = e.clientY - this.lastY;
@@ -94,12 +103,20 @@ class ZenScenes {
             }
         });
         this.canvas.addEventListener('pointerdown', (e) => {
-            this.dragging = true; this.dragMoved = 0;
+            this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (this.pointers.size === 2) { this.dragMoved = 999; this.pinchPrev = this.pinchDist(); }
+            this.dragging = true; this.dragMoved = this.pointers.size === 2 ? 999 : 0;
             this.lastX = e.clientX; this.lastY = e.clientY;
             this.canvas.style.cursor = 'grabbing';
             try { this.canvas.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
         });
         const end = (e) => {
+            if (e) this.pointers.delete(e.pointerId);
+            if (this.pointers.size < 2) this.pinchPrev = 0;
+            if (this.pointers.size === 1) {          // one finger left after a pinch: continue dragging from its position
+                const p = [...this.pointers.values()][0];
+                this.lastX = p.x; this.lastY = p.y; this.dragging = true; return;
+            }
             if (!this.dragging) return;
             this.dragging = false;
             this.canvas.style.cursor = 'grab';
@@ -113,6 +130,31 @@ class ZenScenes {
             e.preventDefault();
             this.targetZoom = Math.min(1.35, Math.max(0.6, this.targetZoom * (1 + e.deltaY * 0.0009)));
         }, { passive: false });
+    }
+
+    pinchDist() {
+        const p = [...this.pointers.values()];
+        return p.length < 2 ? 0 : Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+    }
+
+    // tilt the phone to look around (same feeling as moving the mouse on a computer)
+    enableTilt() {
+        if (this.tiltOn) return;
+        const start = () => {
+            this.tiltOn = true;
+            let base = null;
+            window.addEventListener('deviceorientation', (e) => {
+                if (e.gamma == null || e.beta == null) return;
+                if (!base) base = { g: e.gamma, b: e.beta };
+                base.g += (e.gamma - base.g) * 0.004; base.b += (e.beta - base.b) * 0.004;   // slowly re-centres
+                this.tiltX = Math.max(-1, Math.min(1, (e.gamma - base.g) / 25));
+                this.tiltY = Math.max(-1, Math.min(1, (e.beta - base.b) / 22));
+            });
+        };
+        const D = window.DeviceOrientationEvent;
+        if (D && typeof D.requestPermission === 'function') {
+            D.requestPermission().then(r => { if (r === 'granted') start(); }).catch(() => { /* ignore */ });
+        } else if (D) start();
     }
 
     resize() {
@@ -130,7 +172,7 @@ class ZenScenes {
         const w = this.world;
         const base = w ? w.cfg.fov : 50;
         const a = this.camera.aspect;
-        this.camera.fov = a < 1.3 ? base * Math.pow(Math.min(1.9, 1.3 / a), 0.85) : base;
+        this.camera.fov = a < 1.3 ? base * Math.pow(Math.min(1.9, 1.3 / a), 0.6) : base;
         this.camera.updateProjectionMatrix();
     }
 
@@ -277,18 +319,25 @@ class ZenScenes {
         this.dragYaw = Math.max(-cfg.maxYaw, Math.min(cfg.maxYaw, this.dragYaw));
         this.dragPitch = Math.max(-0.3, Math.min(0.45, this.dragPitch));
 
-        const idleYaw = Math.sin(this.time * 0.11) * 0.035;
+        // on tall phone screens the camera slowly sweeps left <-> right so the whole scene gets revealed
+        const idleAmp = (this.camera.aspect < 1 ? 0.42 : 0.035) * (this.calm ? 0.3 : 1);
+        const idleYaw = Math.sin(this.time * 0.11) * idleAmp;
         const idlePitch = Math.sin(this.time * 0.17 + 1.3) * 0.012;
         const hs = this.calm ? 0.25 : 1;
-        let tYaw = this.dragYaw - this.smMouseX * cfg.hoverYaw * hs + idleYaw;
-        let tPitch = this.dragPitch + this.smMouseY * cfg.hoverPitch * hs + idlePitch;
+        this.smTX += (this.tiltX - this.smTX) * k; this.smTY += (this.tiltY - this.smTY) * k;
+        const hx = Math.max(-1, Math.min(1, this.smMouseX + this.smTX)), hy = Math.max(-1, Math.min(1, this.smMouseY + this.smTY));
+        let tYaw = this.dragYaw - hx * cfg.hoverYaw * hs + idleYaw;
+        let tPitch = this.dragPitch + hy * cfg.hoverPitch * hs + idlePitch;
         tYaw = Math.max(-cfg.maxYaw, Math.min(cfg.maxYaw, tYaw));
         tPitch = Math.max(cfg.minPitch, Math.min(cfg.maxPitch, tPitch));
         const k2 = dt === 0 ? 1 : 1 - Math.exp(-dt * 5);
         this.yaw += (tYaw - this.yaw) * k2;
         this.pitch += (tPitch - this.pitch) * k2;
 
-        const off = new THREE.Vector3(0, cfg.camY - cfg.target.y, cfg.dist * this.zoom);
+        // portrait screens are narrow: step the camera back so the key objects still fit sideways
+        const asp = this.camera.aspect, extra = cfg.portraitExtra !== undefined ? cfg.portraitExtra : 0.45;
+        const pf = asp < 1 ? 1 + Math.min(extra, (1 - asp) * 0.8) : 1;
+        const off = new THREE.Vector3(0, cfg.camY - cfg.target.y, cfg.dist * this.zoom * pf);
         off.applyEuler(new THREE.Euler(-this.pitch, this.yaw, 0, 'YXZ'));
         this.camera.position.copy(cfg.target).add(off);
         if (this.camera.position.y < cfg.minCamY) this.camera.position.y = cfg.minCamY;

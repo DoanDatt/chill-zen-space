@@ -223,6 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btn) btn.click();      // reuse the preset logic for the current scene's sounds
         }
         showNav();
+        // phones: tilt the device to look around (iOS asks for permission here, on a tap)
+        if (scenes.enableTilt && window.matchMedia('(pointer: coarse)').matches) scenes.enableTilt();
     }
     document.getElementById('btn-enter').addEventListener('click', enter);
     window.addEventListener('keydown', (e) => { if (e.key === 'Enter' && intro && !intro.classList.contains('hide')) enter(); });
@@ -235,6 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showNav();
     }
     document.getElementById('btn-toggle-ui').addEventListener('click', () => setClean(!document.body.classList.contains('clean')));
+    document.getElementById('btn-hide-ui').addEventListener('click', () => setClean(true));
     function goScene(id) {
         const b = document.querySelector('.scene-btn[data-scene="' + id + '"]');
         if (b) b.click();

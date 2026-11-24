@@ -589,3 +589,98 @@ body.focusing #mini-nav .mini-btn#btn-letter { display: none; }
 }
 #focus-toast.show { opacity: 1; transform: translate(-50%, 0); }
 @media (max-width: 600px) { .fh-time { font-size: 26px; } .fh-task { max-width: 130px; } }
+
+
+/* ================= Phones / touch ================= */
+html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+#ui-overlay { max-width: 100vw; }
+/* with the tools showing, the header already has a "hide" button, so the floating mini nav is only for clean mode */
+body:not(.clean) #mini-nav { display: none !important; }
+
+@media (pointer: coarse) {
+    .sound-slider { height: 7px; }
+    .sound-slider::-webkit-slider-thumb { width: 22px; height: 22px; }
+    .glass-btn { min-height: 38px; }
+}
+
+@media (max-width: 720px) {
+    #ui-overlay {
+        padding: calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+        height: 100vh; height: 100dvh;
+    }
+    .header-bar { flex-direction: column; align-items: stretch; padding: 8px 10px; gap: 6px; border-radius: 18px; }
+    .logo-area { justify-content: center; }
+    .logo-tagline { display: none; }
+    .logo-title { font-size: 16px; }
+    .logo-icon { font-size: 20px; }
+    .scene-controls, .header-actions {
+        flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+        scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 1px 0 3px;
+    }
+    .scene-controls::-webkit-scrollbar, .header-actions::-webkit-scrollbar { display: none; }
+    .glass-btn { padding: 9px 13px; flex: none; }
+
+    .bottom-bar { gap: 8px; }
+    .mixer-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; width: 100%; padding: 10px 14px; border-radius: 18px; }
+    .sound-track { min-width: 0; width: 100%; }
+    .sound-slider { width: 100%; height: 6px; }
+    .sound-slider::-webkit-slider-thumb { width: 20px; height: 20px; }
+
+    .middle-row { left: 50% !important; transform: translateX(-50%); bottom: calc(150px + env(safe-area-inset-bottom)) !important; width: calc(100% - 20px); max-width: 420px; }
+    .affirmation-card { padding: 8px 14px; max-width: none; border-radius: 16px; }
+    #quote-text { font-size: 12.5px; line-height: 1.5; margin-bottom: 4px; }
+    .scene-hint { display: none; }
+
+    #dedication { top: calc(10px + env(safe-area-inset-top)); font-size: 13px; padding: 6px 14px; max-width: calc(100vw - 24px); white-space: normal; text-align: center; }
+    body:not(.clean) #dedication { top: calc(176px + env(safe-area-inset-top)); font-size: 12px; }
+
+    #mini-nav { bottom: calc(14px + env(safe-area-inset-bottom)); padding: 5px 8px; gap: 2px; max-width: calc(100vw - 16px); }
+    .mini-btn { width: 36px; height: 36px; font-size: 17px; }
+    .mini-sep { margin: 0 2px; }
+
+    #focus-hud { top: calc(10px + env(safe-area-inset-top)); max-width: calc(100vw - 16px); gap: 8px; padding: 6px 12px 6px 8px; }
+    .fh-btns button { width: 36px; height: 36px; }
+    #focus-toast { top: calc(84px + env(safe-area-inset-top)); font-size: 13px; }
+
+    .zen-modal {
+        width: calc(100vw - 24px); max-width: 440px; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px);
+        overflow-y: auto; padding: 20px 16px; border-radius: 22px;
+    }
+    .zen-modal p { max-width: 100% !important; }
+    .focus-presets button { padding: 9px 12px; }
+    .timer-list { flex-wrap: wrap; justify-content: center; }
+    .intro-card { padding: 16px 22px; }
+}
+
+/* phones held sideways: very little height, keep everything compact */
+@media (max-height: 520px) and (orientation: landscape) {
+    #ui-overlay { padding: 6px 10px; }
+    .header-bar { padding: 5px 10px; border-radius: 16px; flex-direction: row; flex-wrap: nowrap; }
+    .logo-title, .logo-tagline { display: none; }
+    .scene-controls, .header-actions { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
+    .scene-controls::-webkit-scrollbar, .header-actions::-webkit-scrollbar { display: none; }
+    .scene-controls { flex: 1 1 40%; } .header-actions { flex: 1 1 50%; }
+    .glass-btn { padding: 6px 10px; min-height: 0; flex: none; }
+    .mixer-panel { padding: 6px 12px; gap: 6px 10px; }
+    .middle-row { left: 12px !important; transform: none; bottom: 72px !important; width: 260px; }
+    .scene-hint { display: none; }
+    body:not(.clean) #dedication { top: 70px; }
+    #dedication { top: 8px; font-size: 13px; padding: 5px 14px; }
+    #mini-nav { bottom: 8px; }
+    .zen-modal { max-height: calc(100vh - 16px); overflow-y: auto; padding: 14px 20px; }
+    .intro-name { font-size: 38px; margin-bottom: 6px; } .intro-msg { margin-bottom: 14px; font-size: 14px; } .intro-heart { font-size: 36px; } .intro-tip { display: none; }
+}
+
+@media (max-width: 720px) {
+    /* hint that the chip rows scroll sideways */
+    .scene-controls, .header-actions {
+        -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+        mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+    .sound-slider::-webkit-slider-thumb { width: 15px; height: 15px; }
+    .sound-slider { height: 5px; }
+}

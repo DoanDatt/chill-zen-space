@@ -460,7 +460,7 @@ function buildRainScene() {
         cfg: {
             target: new THREE.Vector3(0.6, 2.35, -3.2), dist: 9.8, camY: 3.4, fov: 44,
             hoverYaw: 0.3, hoverPitch: 0.1, maxYaw: 0.78, minPitch: -0.12, maxPitch: 0.32,
-            minCamY: 1.4, bloom: { strength: 0.55, radius: 0.75, threshold: 0.7 }, exposure: 1
+            portraitExtra: 0.3, minCamY: 1.4, bloom: { strength: 0.55, radius: 0.75, threshold: 0.7 }, exposure: 1
         }
     };
 }
