@@ -254,6 +254,10 @@ function buildBeachScene() {
             { x: 1.9, z: 0.5, face: [4.6, 0.8], pause: 6 },                    // warm hands by the fire
             { x: -5.0, z: 1.2, face: [-8.5, -0.5], pause: 5 }                  // look up at the palm
         ],
+        playBounds: { x0: -9.5, x1: 9.5, z0: -3.5, z1: 5.5 },
+        playBlocked: (x, z) => z < -3.0 || z > 5.0 || x < -9 || x > 9 ||
+            Math.hypot(x - 4.6, z - 0.8) < 1.0 || Math.hypot(x - 3.2, z - 2.0) < 0.9 || Math.hypot(x - 6.1, z - 2.3) < 0.9 ||
+            Math.hypot(x + 5, z + 2.2) < 0.55 || Math.hypot(x + 8.5, z + 0.5) < 0.6 || Math.hypot(x + 7.2, z - 3.5) < 0.5 || Math.hypot(x - 9.5, z - 1.5) < 0.6,
         sitMin: 25, sitMax: 45
     });
     updates.push((dt, t) => couple.update(dt, t));
@@ -323,7 +327,7 @@ function buildBeachScene() {
         cfg: {
             target: new THREE.Vector3(0, 2.0, -8), dist: 19, camY: 3.6, fov: 54,
             hoverYaw: 0.45, hoverPitch: 0.12, maxYaw: 1.3, minPitch: -0.1, maxPitch: 0.35,
-            minCamY: 0.9, bloom: { strength: 0.5, radius: 0.8, threshold: 0.85 }, exposure: 1
+            followK: 0.55, minCamY: 0.9, bloom: { strength: 0.5, radius: 0.8, threshold: 0.85 }, exposure: 1
         }
     };
 }

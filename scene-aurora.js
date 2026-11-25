@@ -274,6 +274,8 @@ function buildAuroraScene() {
             { x: 6.6, z: -1.8, face: [6.6, -40], pause: 9, hearts: true },     // stand together under the aurora
             { x: 5.0, z: 0.4, face: [0, -30], pause: 6 }
         ],
+        playBounds: { x0: -6.5, x1: 9.0, z0: -6.5, z1: 4.0 },
+        playBlocked: (x, z) => x < -6 || x > 8.6 || z > 3.6 || z < -6.0 || (x > 6.3 && z < -2.8) || Math.hypot(x - 3.5, z + 3.3) < 0.6,
         sitMin: 25, sitMax: 45
     });
     const camp = new THREE.Group(); camp.position.set(3.5, 0, -3.3);
@@ -370,7 +372,7 @@ function buildAuroraScene() {
         cfg: {
             target: new THREE.Vector3(0, 2.9, -9), dist: 15.5, camY: 2.2, fov: 58,
             hoverYaw: 0.5, hoverPitch: 0.14, maxYaw: 1.35, minPitch: -0.08, maxPitch: 0.4,
-            minCamY: 1.2, bloom: { strength: 0.85, radius: 0.8, threshold: 0.5 }, exposure: 1
+            followK: 0.55, minCamY: 1.2, bloom: { strength: 0.85, radius: 0.8, threshold: 0.5 }, exposure: 1
         }
     };
 }

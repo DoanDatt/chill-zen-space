@@ -246,6 +246,14 @@ function buildSakuraScene() {
             { x: -4.3, z: -0.6, face: [-2.8, -2.2], pause: 6 },                  // watch the fawn
             { x: -1.2, z: 2.6, face: [1.5, -1.5], pause: 7 }                     // look at the koi
         ],
+        playBounds: { x0: -10, x1: 10, z0: -8, z1: 5 },
+        playBlocked: (x, z) => {
+            if (x < -9.5 || x > 9.5 || z < -7.6 || z > 4.6) return true;
+            if (((x - pond.x) / 4.05) ** 2 + ((z - pond.z) / 3.15) ** 2 < 1) return true;                   // the pond (a little wider than the water)
+            for (const p of treeSpots) if (Math.hypot(x - p[0], z - p[1]) < 0.35 * p[2] + 0.4) return true; // trunks
+            if (ZU.inBox(x, z, 1.7, -5.9, 0, 1.35, 0.75)) return true;                                       // bench
+            return Math.hypot(x - 6, z - 0.4) < 0.8 || Math.hypot(x + 2.8, z + 2.2) < 0.5;                   // lantern, fawn
+        },
         sitMin: 25, sitMax: 45
     });
     updates.push((dt, t) => couple.update(dt, t));
@@ -361,7 +369,7 @@ function buildSakuraScene() {
         cfg: {
             target: new THREE.Vector3(0.4, 1.5, -3), dist: 12.5, camY: 3.4, fov: 52,
             hoverYaw: 0.5, hoverPitch: 0.13, maxYaw: 1.3, minPitch: -0.1, maxPitch: 0.38,
-            minCamY: 1.1, bloom: { strength: 0.4, radius: 0.85, threshold: 0.88 }, exposure: 1
+            followK: 0.55, minCamY: 1.1, bloom: { strength: 0.4, radius: 0.85, threshold: 0.88 }, exposure: 1
         }
     };
 }

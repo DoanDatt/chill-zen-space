@@ -252,8 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'h' || e.key === 'H') setClean(!document.body.classList.contains('clean'));
         const order = ['rain', 'aurora', 'beach', 'sakura'];
         const i = order.indexOf(scenes.currentSceneId);
-        if (e.key === 'ArrowRight') goScene(order[(i + 1) % 4]);
-        if (e.key === 'ArrowLeft') goScene(order[(i + 3) % 4]);
+        if (e.key === 'ArrowRight' && !(window.__control && window.__control.active)) goScene(order[(i + 1) % 4]);
+        if (e.key === 'ArrowLeft' && !(window.__control && window.__control.active)) goScene(order[(i + 3) % 4]);
     });
     document.querySelectorAll('.mini-btn[data-go]').forEach(b => b.addEventListener('click', () => goScene(b.dataset.go)));
     const syncMini = () => {
@@ -367,6 +367,11 @@ document.addEventListener('DOMContentLoaded', () => {
     syncWeather();
 
     document.getElementById('btn-gallery').addEventListener('click', () => ZLove.openGallery());
+
+    // steer one of the two characters
+    const control = new ZenControl({ scenes });
+    window.__control = control;
+    ['btn-control', 'btn-control-mini'].forEach(id => { const b = document.getElementById(id); if (b) b.addEventListener('click', () => control.toggle()); });
 
     // focus mode (Pomodoro)
     const focus = new ZenFocus({ scenes, setClean, isClean: () => document.body.classList.contains('clean') });

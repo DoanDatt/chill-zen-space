@@ -307,6 +307,12 @@ const ZU = (() => {
     }
     function swayPolaroids(list, t) { list.forEach((g, i) => { g.rotation.z = g.userData.baseZ + Math.sin(t * 0.8 + i * 1.7) * 0.012; }); }
 
+    // is (x,z) inside a box centred at (cx,cz), rotated by yaw, with half sizes hw (local x) and hd (local z)?
+    function inBox(x, z, cx, cz, yaw, hw, hd) {
+        const dx = x - cx, dz = z - cz, c = Math.cos(yaw), s = Math.sin(yaw);
+        return Math.abs(dx * c - dz * s) < hw && Math.abs(dx * s + dz * c) < hd;
+    }
+
     function at(obj, x, y, z) { obj.position.set(x, y, z); return obj; }
 
     function shadowAll(obj, cast = true, receive = false) {
@@ -405,7 +411,7 @@ const ZU = (() => {
 
     return {
         TAU, clamp, lerp, rand, smooth, rng, vnoise, fbm, canvasTex, glowTex, heartTex, cloudTex, glowSprite,
-        makeSky, makeTwinkle, makeStars, makeTerrain, makeRidgeRing, instanced, stdMat, box, at, makePolaroid, addPolaroids, swayPolaroids, shadowAll,
+        makeSky, makeTwinkle, makeStars, makeTerrain, makeRidgeRing, instanced, stdMat, box, at, inBox, makePolaroid, addPolaroids, swayPolaroids, shadowAll,
         makeFire, makeSteam, pixelRatio: 1
     };
 })();

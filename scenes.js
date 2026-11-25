@@ -43,6 +43,7 @@ class ZenScenes {
         this.dragging = false; this.dragMoved = 0; this.lastX = 0; this.lastY = 0;
         this.hearts = [];
         this.calm = false;
+        this.camT = null; this.markers = [];
         this.pointers = new Map(); this.pinchPrev = 0;
         this.tiltX = 0; this.tiltY = 0; this.smTX = 0; this.smTY = 0; this.tiltOn = false;
         this.raycaster = new THREE.Raycaster();
@@ -210,6 +211,7 @@ class ZenScenes {
     }
 
     activate(id) {
+        if (this.world && this.world.couple && this.world.couple.getPlayer && this.world.couple.getPlayer()) this.world.couple.instantRejoin();
         const w = this.getWorld(id);
         this.world = w;
         this.currentSceneId = id;
@@ -221,6 +223,7 @@ class ZenScenes {
         this.hearts.forEach(h => { if (h.parent) h.parent.remove(h.sprite); });
         this.hearts = [];
         this.applyFov();
+        this.camT = w.cfg.target.clone();
         this.updateCamera(0.016);
         if (this.onChange) this.onChange();
     }
@@ -255,6 +258,9 @@ class ZenScenes {
         if (this.world && this.world.couple && this.world.couple.setActive) this.world.couple.setActive(!this.calm);
     }
 
+    // the couple of the current world (or null)
+    coupleNow() { return this.world && this.world.couple ? this.world.couple : null; }
+
     // weather / effects: each world may expose { names: [...], index, set(i) }
     cycleWeather() {
         const w = this.world && this.world.weather;
@@ -286,9 +292,30 @@ class ZenScenes {
         }
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.05);
         const pt = new THREE.Vector3();
+        const cp = this.world.couple;
+        const steering = cp && cp.getPlayer && cp.getPlayer() && cp.playerMode() === 'free';
+        if (steering && this.raycaster.ray.intersectPlane(plane, pt) && pt.distanceTo(this.camera.position) < 80) {
+            if (cp.moveTo(pt.x, pt.z)) this.spawnMarker(pt);          // tap the ground: walk there
+            return;
+        }
         if (this.raycaster.ray.intersectPlane(plane, pt) && pt.distanceTo(this.camera.position) < 60) {
             this.spawnHearts(pt.clone().setY(0.4), 3);
             if (this.world.onTap) this.world.onTap(pt, this.time);
+        }
+    }
+
+    spawnMarker(pt) {
+        const s = ZU.glowSprite(0xffffff, 0.7, 0.9);
+        s.position.set(pt.x, 0.12, pt.z);
+        this.world.scene.add(s);
+        this.markers.push({ s, age: 0, scene: this.world.scene });
+    }
+    updateMarkers(dt) {
+        for (let i = this.markers.length - 1; i >= 0; i--) {
+            const m = this.markers[i]; m.age += dt;
+            const k = m.age / 1.0;
+            m.s.scale.set(0.7 + k * 0.9, 0.7 + k * 0.9, 1); m.s.material.opacity = Math.max(0, 0.9 * (1 - k));
+            if (k >= 1) { m.scene.remove(m.s); m.s.material.dispose(); this.markers.splice(i, 1); }
         }
     }
 
@@ -359,17 +386,25 @@ class ZenScenes {
         // portrait screens are narrow: step the camera back so the key objects still fit sideways
         const asp = this.camera.aspect, extra = cfg.portraitExtra !== undefined ? cfg.portraitExtra : 0.45;
         const pf = asp < 1 ? 1 + Math.min(extra, (1 - asp) * 0.8) : 1;
+        // follow the character you steer (gently), otherwise rest on the scene's own focus point
+        const cpl = this.world.couple, pl = cpl && cpl.playerPos && cpl.playerPos();
+        const desired = cfg.target.clone();
+        if (pl) desired.lerp(new THREE.Vector3(pl.x, cfg.target.y, pl.z), cfg.followK !== undefined ? cfg.followK : 0.5);
+        if (!this.camT) this.camT = cfg.target.clone();
+        this.camT.lerp(desired, dt === 0 ? 1 : 1 - Math.exp(-dt * 2.5));
         const off = new THREE.Vector3(0, cfg.camY - cfg.target.y, cfg.dist * this.zoom * pf);
         off.applyEuler(new THREE.Euler(-this.pitch, this.yaw, 0, 'YXZ'));
-        this.camera.position.copy(cfg.target).add(off);
+        this.camera.position.copy(this.camT).add(off);
         if (this.camera.position.y < cfg.minCamY) this.camera.position.y = cfg.minCamY;
-        this.camera.lookAt(cfg.target);
+        this.camera.lookAt(this.camT);
     }
 
     // ------------------------------------------------------------------ frame
     update(dt) {
         this.time += dt;
+        if (this.onFrame) this.onFrame(dt);
         this.updateCamera(dt);
+        this.updateMarkers(dt);
         this.world.update(dt, this.time, { camera: this.camera });
         this.updateHearts(dt);
     }

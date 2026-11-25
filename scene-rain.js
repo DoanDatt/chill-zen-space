@@ -360,6 +360,14 @@ function buildRainScene() {
             { x: 4.9, z: -3.7, face: [5.5, -5.4], pause: 6 },                   // warm up by the fire
             { x: -1.0, z: -2.2, face: [-1.0, -6], pause: 7 }                    // watch the rain at the window
         ],
+        playBounds: { x0: -7.5, x1: 7.5, z0: -5.5, z1: 5.0 },
+        playBlocked: (x, z) => x < -7.0 || x > 7.0 || z < -5.2 || z > 4.6 ||
+            ZU.inBox(x, z, -3.9, -1.6, 0.5, 1.9, 1.0) ||                  // sofa
+            (z < -3.7 && x > -2.9 && x < 2.6) ||                          // desk
+            Math.hypot(x - 0.5, z + 3.3) < 0.75 ||                        // chair
+            Math.hypot(x - 3.7, z + 2.4) < 1.0 ||                         // cat bed
+            (z < -4.3 && x > 3.2) ||                                      // hearth
+            (x < -4.3 && z < -4.7) || Math.hypot(x - 7, z + 5) < 1.0,     // bookshelf, plant
         sitMin: 22, sitMax: 40
     });
     updates.push((dt, t) => couple.update(dt, t));
@@ -497,7 +505,7 @@ function buildRainScene() {
         cfg: {
             target: new THREE.Vector3(0.6, 2.35, -3.2), dist: 9.8, camY: 3.4, fov: 44,
             hoverYaw: 0.3, hoverPitch: 0.1, maxYaw: 0.78, minPitch: -0.12, maxPitch: 0.32,
-            portraitExtra: 0.3, minCamY: 1.4, bloom: { strength: 0.55, radius: 0.75, threshold: 0.7 }, exposure: 1
+            portraitExtra: 0.3, followK: 0.3, minCamY: 1.4, bloom: { strength: 0.55, radius: 0.75, threshold: 0.7 }, exposure: 1
         }
     };
 }
