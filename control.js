@@ -45,9 +45,18 @@ class ZenControl {
         this.now = panel.querySelector('.cp-now');
 
         panel.querySelectorAll('[data-who]').forEach(b => b.addEventListener('click', () => this.start(b.dataset.who)));
-        panel.querySelector('[data-act="close"]').addEventListener('click', () => this.close());
+        panel.querySelector('[data-act="close"]').addEventListener('click', () => this.hidePanel());
         panel.querySelector('[data-act="stop"]').addEventListener('click', () => this.stop());
         panel.querySelector('[data-act="swap"]').addEventListener('click', () => this.start(this.who === 'him' ? 'her' : 'him'));
+
+        // while steering the panel gets out of the way: only this small stop button stays
+        const chip = document.createElement('button');
+        chip.id = 'ctrl-chip';
+        chip.title = 'Dừng điều khiển (Esc)';
+        chip.setAttribute('aria-label', 'Dừng điều khiển');
+        chip.textContent = '⏹';
+        chip.addEventListener('click', () => this.stop());
+        document.body.appendChild(chip);
 
         // on-screen stick (phones)
         const stick = document.createElement('div');
@@ -91,22 +100,23 @@ class ZenControl {
     }
 
     // ------------------------------------------------------------------ UI actions
-    toggle() {
-        if (this.panel.classList.contains('open')) { if (!this.who) this.close(); }
+    toggle() {                                     // the 🎮 button: show / hide the panel (steering keeps going)
+        if (this.panel.classList.contains('open')) this.hidePanel();
         else { this.panel.classList.add('open'); this.refresh(); }
     }
-    close() {
-        if (this.who) this.stop();
-        this.panel.classList.remove('open');
-        this.refresh();
-    }
+    hidePanel() { this.panel.classList.remove('open'); this.refresh(); }
     start(who) {
         const c = this.scenes.coupleNow();
         if (!c) return;
+        const first = this.who === null;
         this.who = who;
         c.setPlayer(who);
-        this.panel.classList.add('open');
+        this.panel.classList.remove('open');           // get out of the way right away
         this.refresh();
+        if (window.ZLove) {
+            const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            ZLove.toast((who === 'him' ? '👦 Đạt' : '👧 Hạnh') + (touch ? ': kéo cần điều khiển hoặc chạm vào mặt đất' : ': W A S D / mũi tên để đi · Shift để chạy · Esc để dừng'), first ? 5000 : 2500);
+        }
     }
     stop() {
         const c = this.scenes.coupleNow();

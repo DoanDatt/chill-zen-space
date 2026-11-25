@@ -917,3 +917,15 @@ body.clean #ctrl-panel { bottom: calc(76px + env(safe-area-inset-bottom)); }
     body.driving.clean #ctrl-panel, body.driving:not(.clean) #ctrl-panel { top: calc(10px + env(safe-area-inset-top)); bottom: auto; }
     body.driving:not(.clean) #ctrl-panel { top: calc(150px + env(safe-area-inset-top)); }
 }
+
+/* quiet steering: only a small stop button stays on screen */
+#ctrl-chip {
+    position: fixed; right: calc(18px + env(safe-area-inset-right)); bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 15;
+    width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); cursor: pointer; font-size: 16px; color: #fff;
+    background: rgba(15, 23, 42, .5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s, background .2s;
+}
+body.driving #ctrl-chip { opacity: .5; visibility: visible; }
+body.driving #ctrl-chip:hover { opacity: 1; background: rgba(220, 70, 100, .75); }
+body.intro-open #ctrl-chip, body.focusing #ctrl-chip { display: none; }
+@media (max-width: 720px) { #ctrl-chip { bottom: calc(160px + env(safe-area-inset-bottom)); right: calc(16px + env(safe-area-inset-right)); } }
