@@ -240,12 +240,22 @@ function buildBeachScene() {
     blanket.position.set(px, py, pz); blanket.rotation.y = 0.18; blanket.receiveShadow = true; scene.add(blanket);
     const pic = new THREE.Group(); pic.position.set(px, py, pz); pic.rotation.y = 0.18; scene.add(pic);
     // the couple watches the sunset from the blanket
+    pic.updateMatrixWorld(true);
     const couple = ZCouple.makeCouple({ ground: true, outfit: 'summer' });
-    couple.mesh.scale.setScalar(1.2);
-    couple.mesh.position.set(-0.3, 0.17 * 1.2 + 0.03, 0.35);
-    couple.mesh.rotation.y = Math.PI;
     ZU.shadowAll(couple.mesh, true);
-    pic.add(couple.mesh);
+    scene.add(couple.mesh);
+    couple.setSeat({ pos: pic.localToWorld(new THREE.Vector3(-0.3, 0.17 * 1.2 + 0.03, 0.35)), yaw: pic.rotation.y + Math.PI, scale: 1.2 });
+    couple.setWander({
+        groundY: (x, z) => sandH(x, z),
+        area: { x0: -6.0, x1: 2.2, z0: -1.2, z1: 4.6 },
+        isBlocked: (x, z) => z < -2.7 || x > 3.0 || x < -7.0 || z > 5.4 || Math.hypot(x - 4.6, z - 0.8) < 2.0 || Math.hypot(x + 5, z + 2.2) < 0.9 || Math.hypot(x + 7.2, z - 3.5) < 1.4,
+        specials: [
+            { x: -1.0, z: -1.5, face: [-1, -30], pause: 9, hearts: true },    // watch the waves
+            { x: 1.9, z: 0.5, face: [4.6, 0.8], pause: 6 },                    // warm hands by the fire
+            { x: -5.0, z: 1.2, face: [-8.5, -0.5], pause: 5 }                  // look up at the palm
+        ],
+        sitMin: 25, sitMax: 45
+    });
     updates.push((dt, t) => couple.update(dt, t));
     // basket
     box(pic, 0.6, 0.34, 0.42, stdMat(0xa8744a, 1), 0.85, 0.2, -0.3);

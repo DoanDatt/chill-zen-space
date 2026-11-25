@@ -1,13 +1,23 @@
 /**
- * ZenHaven - a cute low-poly couple sitting close together (procedural, no external models).
- * makeCouple({ ground, outfit: 'cozy'|'winter'|'summer'|'spring', blanket, mat })
- *  - origin of the returned group = the hips, +Z = the direction they face.
- *  - ground:true  -> sitting on the floor with knees up; false -> sitting on a seat with legs hanging.
- *  - returns { mesh, update(dt, t), react() }
+ * A cute low-poly couple (procedural, no external models) that lives its own life:
+ * they sit together, then stand up, walk hand in hand around the scene, stop to look at things, and come back to sit.
+ *
+ *   const couple = ZCouple.makeCouple({ outfit: 'cozy'|'winter'|'summer'|'spring', ground: false, blanket: false });
+ *   scene.add(couple.mesh);
+ *   couple.setSeat({ pos: Vector3 (hips while seated, world), yaw, scale });
+ *   couple.setWander({ groundY(x,z), area:{x0,x1,z0,z1}, isBlocked(x,z), via:[[x,z]...], specials:[{x,z,face:[x,z],pause,hearts}], sitMin, sitMax, freeRadius });
+ *   couple.update(dt, t);   couple.react();   couple.setActive(bool);
  */
 const ZCouple = (() => {
     const V = (x, y, z) => new THREE.Vector3(x, y, z);
     const std = (c, r = 0.85) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+    const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+    const smooth01 = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+    const wrapPi = (a) => { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; };
+    const rnd = (a, b) => a + Math.random() * (b - a);
+
+    const L1 = 0.36, L2 = 0.34, A1 = 0.26, A2 = 0.24;     // thigh, shin, upper arm, forearm
+    const STAND_H = 0.785;                                 // hips -> sole when standing
 
     function ball(parent, p, r, mat, sx = 1, sy = 1, sz = 1) {
         const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), mat);
@@ -21,6 +31,16 @@ const ZCouple = (() => {
         m.position.copy(A).addScaledVector(d, 0.5);
         m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize());
         m.castShadow = true; parent.add(m); return m;
+    }
+    // an arm or a leg: two segments hanging down from a joint (rotate j1 / j2 to pose it)
+    function limb(parent, pos, l1, l2, r, mat1, mat2) {
+        const j1 = new THREE.Group(); j1.position.set(pos[0], pos[1], pos[2]); parent.add(j1);
+        const s1 = new THREE.Mesh(new THREE.CylinderGeometry(r[0], r[1], l1, 9), mat1); s1.position.y = -l1 / 2; s1.castShadow = true; j1.add(s1);
+        ball(j1, [0, 0, 0], r[0] * 1.02, mat1);
+        const j2 = new THREE.Group(); j2.position.y = -l1; j1.add(j2);
+        const s2 = new THREE.Mesh(new THREE.CylinderGeometry(r[2], r[3], l2, 9), mat2); s2.position.y = -l2 / 2; s2.castShadow = true; j2.add(s2);
+        ball(j2, [0, 0, 0], r[2] * 1.02, mat2);
+        return { j1, j2 };
     }
 
     const OUTFITS = {
@@ -92,32 +112,28 @@ const ZCouple = (() => {
             bone(upper, [0.1, 0.6, 0.12], [0.14, 0.34, 0.2], 0.045, 0.04, sm);
         }
 
-        [-1, 1].forEach(s => {                                                                // arms
-            const sh = [s * 0.2, 0.48, 0];
-            let el, ha;
-            if (o.armAround && s === o.side) { el = [s * 0.38, 0.4, -0.04]; ha = [s * 0.56, 0.55, -0.14]; }
-            else if (o.ground) { el = [s * 0.27, 0.3, 0.1]; ha = [s * 0.14, 0.24, 0.22]; }
-            else { el = [s * 0.26, 0.28, 0.1]; ha = [s * 0.12, 0.13, 0.3]; }
-            bone(upper, sh, el, 0.062, 0.055, mTop);
-            bone(upper, el, ha, 0.055, 0.045, mTop);
-            ball(upper, ha, 0.052, mSkin);
+        // jointed arms (index 0 = left x<0, 1 = right x>0) and legs
+        const arms = [-1, 1].map(s => {
+            const a = limb(upper, [s * 0.2, 0.48, 0], A1, A2, [0.062, 0.055, 0.055, 0.045], mTop, mTop);
+            ball(a.j2, [0, -A2, 0], 0.052, mSkin);
+            return a;
         });
-
-        const mLeg = o.dress ? mSkin : mBot;                                                  // legs
-        [-1, 1].forEach(s => {
-            let kn, an;
-            if (o.ground) { kn = [s * 0.11, 0.27, 0.3]; an = [s * 0.11, -0.08, 0.5]; }
-            else { kn = [s * 0.11, 0, 0.36]; an = [s * 0.11, -0.32, 0.4]; }
-            bone(g, [s * 0.1, 0, 0.02], kn, 0.088, 0.075, o.dress ? mTop : mBot);
-            bone(g, kn, an, 0.07, 0.06, mLeg);
-            ball(g, [an[0], an[1] - 0.03, an[2] + 0.05], 0.075, mShoe, 1, 0.7, 1.6);
+        const legs = [-1, 1].map(s => {
+            const l = limb(g, [s * 0.1, 0, 0.02], L1, L2, [0.088, 0.075, 0.07, 0.06], o.dress ? mTop : mBot, o.dress ? mSkin : mBot);
+            ball(l.j2, [0, -L2 - 0.03, 0.05], 0.075, mShoe, 1, 0.7, 1.6);
+            return l;
         });
-        if (o.dress) ball(g, [0, 0, 0.2], 0.3, mTop, 1, 0.32, 1.1);                           // skirt over the lap
-
-        return { g, upper, head };
+        // skirt follows the legs: hangs when standing, drapes over the lap when sitting
+        let skirt = null;
+        if (o.dress) {
+            skirt = new THREE.Group(); skirt.position.set(0, 0.02, 0.02); g.add(skirt);
+            const sm = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.31, 0.36, 18, 1, true), new THREE.MeshStandardMaterial({ color: o.top, roughness: 0.9, side: THREE.DoubleSide }));
+            sm.position.y = -0.17; sm.castShadow = true; skirt.add(sm);
+        }
+        return { g, upper, head, arms, legs, skirt };
     }
 
-    function plaidTex(a, b) {
+    function plaidTexture(a, b) {
         return ZU.canvasTex(128, 128, (c, w, h) => {
             c.fillStyle = a; c.fillRect(0, 0, w, h);
             c.fillStyle = 'rgba(0,0,0,0.35)';
@@ -127,55 +143,236 @@ const ZCouple = (() => {
         });
     }
 
+    // arm poses: [shoulder rx, shoulder rz, elbow rx, elbow rz]  (s = -1 left, +1 right; rx<0 = forward, rz = sideways)
+    const ARM = {
+        lap: (s) => [-0.45, -s * 0.2, -0.85, 0],
+        ground: (s) => [-0.7, -s * 0.15, -0.65, 0],
+        around: (s) => [0.35, s * 1.17, 0, s * 1.1],
+        hold: (s) => [-0.3, s * 0.06, -0.45, 0],
+        rest: (s) => [-0.05, s * 0.08, -0.12, 0]
+    };
+
     function makeCouple(opts = {}) {
-        const { ground = false, outfit = 'cozy', blanket = false, mat = false } = opts;
+        const { ground = false, outfit = 'cozy', blanket = false } = opts;
         const P = OUTFITS[outfit] || OUTFITS.cozy;
-        const him = person(Object.assign({}, P.him, { ground, side: 1, armAround: true }));
-        const her = person(Object.assign({}, P.her, { ground, side: -1 }));
-        him.g.position.x = -0.25; her.g.position.x = 0.25;
-        her.upper.rotation.z = 0.1; her.head.rotation.z = 0.3; her.head.position.x = -0.08;   // her head rests on his shoulder
-        him.upper.rotation.z = -0.04; him.head.rotation.z = -0.1;
+        const people = [person(Object.assign({}, P.him)), person(Object.assign({}, P.her))];   // 0 = him (left), 1 = her (right)
+        people[0].g.position.x = -0.25; people[1].g.position.x = 0.25;
 
         const root = new THREE.Group();
-        root.add(him.g, her.g);
+        root.add(people[0].g, people[1].g);
 
+        let lap = null;
         if (blanket) {
-            const bm = new THREE.MeshStandardMaterial({ map: plaidTex('#c0553b', 'rgba(255,230,190,.55)'), roughness: 1 });
-            const top = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.09, 0.62), bm);
-            top.position.set(0, 0.1, 0.22); top.castShadow = true; root.add(top);
-            const drape = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.34, 0.06), bm);
-            drape.position.set(0, -0.06, 0.53); drape.rotation.x = 0.1; root.add(drape);
-        }
-        if (mat) {
-            const m = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.7), new THREE.MeshStandardMaterial({ map: plaidTex('#8f2f3a', 'rgba(255,220,180,.5)'), roughness: 1 }));
-            m.rotation.x = -Math.PI / 2; m.position.set(0, -0.165, 0.25); m.receiveShadow = true; root.add(m);
+            lap = new THREE.Group();
+            const bm = new THREE.MeshStandardMaterial({ map: plaidTexture('#c0553b', 'rgba(255,230,190,.55)'), roughness: 1 });
+            const top = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.09, 0.62), bm); top.position.set(0, 0.1, 0.22); top.castShadow = true; lap.add(top);
+            const drape = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.34, 0.06), bm); drape.position.set(0, -0.06, 0.53); drape.rotation.x = 0.1; lap.add(drape);
+            root.add(lap);
         }
 
-        // little hearts floating above them
+        // floating hearts
         const hearts = [];
         for (let i = 0; i < 4; i++) {
             const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: ZU.heartTex(), transparent: true, opacity: 0, depthWrite: false, fog: false }));
             s.scale.set(0.3, 0.3, 1); root.add(s);
             hearts.push({ s, t: -1, dx: 0 });
         }
-        function spawn(n) {
-            let k = 0;
-            hearts.forEach(h => { if (h.t < 0 && k < n) { h.t = 0; h.dx = (Math.random() - 0.5) * 0.4; k++; } });
+        const spawn = (n) => { let k = 0; hearts.forEach(h => { if (h.t < 0 && k < n) { h.t = 0; h.dx = (Math.random() - 0.5) * 0.4; k++; } }); };
+
+        // ------------------------------------------------------------ behaviour
+        const seat = { pos: V(0, 0, 0), yaw: 0, scale: 1 };
+        const W = { groundY: () => 0, area: { x0: -3, x1: 3, z0: -3, z1: 3 }, isBlocked: () => false, via: [], specials: [], sitMin: 22, sitMax: 40, freeRadius: 0, speed: 0.85 };
+        let state = 'sit', stateT = 0, sitTimer = rnd(9, 15), active = true;
+        let path = [], wi = 0, ph = 0, yaw = 0, pauseT = 0, faceYaw = 0;
+        let sitFrom = null, yawFrom = 0, lapK = 1, happy = 0, nextHeart = 3;
+        const px = { x: 0, z: 0 };
+
+        const freeR = () => (W.freeRadius || 2.8 * seat.scale);
+        const blockedAt = (x, z) => (Math.hypot(x - seat.pos.x, z - seat.pos.z) < freeR() ? false : W.isBlocked(x, z));
+        const clearSeg = (a, b) => {
+            const d = Math.hypot(b.x - a.x, b.z - a.z), n = Math.max(1, Math.ceil(d / 0.25));
+            for (let i = 0; i <= n; i++) { const u = i / n; if (blockedAt(a.x + (b.x - a.x) * u, a.z + (b.z - a.z) * u)) return false; }
+            return true;
+        };
+        // shortest walkable route between two points, using the scene's "via" points around obstacles (tiny Dijkstra)
+        function route(a, b) {
+            const nodes = [a, b].concat(W.via.map(v => ({ x: v[0], z: v[1] })).filter(v => !blockedAt(v.x, v.z)));
+            const n = nodes.length, dist = new Array(n).fill(Infinity), prev = new Array(n).fill(-1), done = new Array(n).fill(false);
+            dist[0] = 0;
+            for (let it = 0; it < n; it++) {
+                let u = -1; for (let i = 0; i < n; i++) if (!done[i] && (u < 0 || dist[i] < dist[u])) u = i;
+                if (u < 0 || dist[u] === Infinity) break;
+                done[u] = true;
+                for (let v = 0; v < n; v++) {
+                    if (done[v]) continue;
+                    const d = Math.hypot(nodes[u].x - nodes[v].x, nodes[u].z - nodes[v].z);
+                    if (dist[u] + d < dist[v] && clearSeg(nodes[u], nodes[v])) { dist[v] = dist[u] + d; prev[v] = u; }
+                }
+            }
+            if (dist[1] === Infinity) return null;
+            const out = []; for (let i = 1; i !== -1; i = prev[i]) out.unshift(nodes[i]);
+            return out.slice(1);      // without the start point
+        }
+        const fwd = () => ({ x: Math.sin(seat.yaw), z: Math.cos(seat.yaw) });
+        function planTrip() {
+            const f = fwd(), a = W.area;
+            const exit = { x: seat.pos.x + f.x * 1.15 * seat.scale, z: seat.pos.z + f.z * 1.15 * seat.scale };
+            const home = { x: seat.pos.x + f.x * 0.95 * seat.scale, z: seat.pos.z + f.z * 0.95 * seat.scale, home: true };
+            const pts = [exit];
+            let last = exit;
+            const stops = 2 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < stops; i++) {
+                for (let tries = 0; tries < 40; tries++) {
+                    let c;
+                    if (W.specials.length && Math.random() < 0.45) { const sp = W.specials[Math.floor(Math.random() * W.specials.length)]; c = { x: sp.x, z: sp.z, special: sp }; }
+                    else c = { x: rnd(a.x0, a.x1), z: rnd(a.z0, a.z1) };
+                    if (blockedAt(c.x, c.z) || Math.hypot(c.x - last.x, c.z - last.z) < 1.5) continue;
+                    const r = route(last, c);
+                    if (!r) continue;
+                    r.forEach((p, k) => pts.push(k === r.length - 1 ? c : p));
+                    last = c; break;
+                }
+            }
+            const back = route(last, home);
+            if (back) back.forEach((p, k) => pts.push(k === back.length - 1 ? home : p));
+            else { pts.push(exit); pts.push(home); }
+            return pts;
+        }
+        const standY = (x, z) => W.groundY(x, z) + STAND_H * seat.scale;
+
+        // target joint angles for a behaviour state
+        function targets(mode, walkPh) {
+            return people.map((pp, p) => {
+                const out = { legs: [], arms: [] };
+                [-1, 1].forEach((s, idx) => {
+                    const inner = p === 0 ? s === 1 : s === -1;
+                    const phs = walkPh + (s > 0 ? 0 : Math.PI);
+                    if (mode === 'sit') {
+                        out.legs.push(ground ? [-2.2, 1.8] : [-1.5708, 1.5708]);
+                        out.arms.push(inner && p === 0 ? ARM.around(s) : (ground ? ARM.ground(s) : ARM.lap(s)));
+                    } else if (mode === 'walk') {
+                        out.legs.push([-Math.sin(phs) * 0.55, 0.08 + 0.85 * Math.max(0, Math.cos(phs))]);
+                        out.arms.push(inner ? ARM.hold(s) : [Math.sin(phs) * 0.5, s * 0.1, -0.25 - 0.15 * Math.max(0, -Math.sin(phs)), 0]);
+                    } else {   // stand
+                        out.legs.push([0, 0]);
+                        out.arms.push(inner ? ARM.hold(s) : ARM.rest(s));
+                    }
+                });
+                return out;
+            });
+        }
+        // current angles (smoothed towards the targets so every change of pose is gentle)
+        const cur = targets('sit', 0).map(o => ({ legs: o.legs.map(l => l.slice()), arms: o.arms.map(a => a.slice()) }));
+
+        function applyPose(dt, tgt, rate) {
+            const k = 1 - Math.exp(-dt * rate);
+            people.forEach((pp, p) => {
+                for (let i = 0; i < 2; i++) {
+                    const cl = cur[p].legs[i], tl = tgt[p].legs[i];
+                    cl[0] += (tl[0] - cl[0]) * k; cl[1] += (tl[1] - cl[1]) * k;
+                    pp.legs[i].j1.rotation.x = cl[0]; pp.legs[i].j2.rotation.x = cl[1];
+                    const ca = cur[p].arms[i], ta = tgt[p].arms[i];
+                    for (let q = 0; q < 4; q++) ca[q] += (ta[q] - ca[q]) * k;
+                    pp.arms[i].j1.rotation.set(ca[0], 0, ca[1]);
+                    pp.arms[i].j2.rotation.set(ca[2], 0, ca[3]);
+                }
+                if (pp.skirt) pp.skirt.rotation.x = (cur[p].legs[0][0] + cur[p].legs[1][0]) * 0.5 * 0.92;
+            });
         }
 
-        let nextHeart = 3, happy = 0;
+        function enterSit() { state = 'sit'; stateT = 0; sitTimer = rnd(W.sitMin, W.sitMax); yaw = seat.yaw; px.x = seat.pos.x; px.z = seat.pos.z; }
+
         return {
             mesh: root,
+            state: () => state,
+            blocked: blockedAt,
+            setSeat(s) {
+                seat.pos.copy(s.pos); seat.yaw = s.yaw || 0; seat.scale = s.scale || 1;
+                root.position.copy(seat.pos); root.rotation.y = seat.yaw; root.scale.setScalar(seat.scale);
+                yaw = seat.yaw; px.x = seat.pos.x; px.z = seat.pos.z;
+            },
+            setWander(c) { Object.assign(W, c); },
+            setActive(v) {
+                active = !!v;
+                if (!active && (state === 'walk' || state === 'pause') && path.length) { path = [path[path.length - 1]]; wi = 0; state = 'walk'; }
+            },
+            startTrip() { if (state === 'sit') sitTimer = 0; },
             react() { happy = 1.6; spawn(4); },
             update(dt, t) {
+                stateT += dt;
+                let mode = 'sit', rate = 6;
+                if (state === 'sit') {
+                    root.position.set(seat.pos.x, seat.pos.y, seat.pos.z); root.rotation.y = seat.yaw;
+                    if (active) { sitTimer -= dt; if (sitTimer <= 0) { state = 'rise'; stateT = 0; } }
+                } else if (state === 'rise') {
+                    mode = 'stand'; rate = 4;
+                    root.position.y += (standY(px.x, px.z) - root.position.y) * (1 - Math.exp(-dt * 3.2));
+                    if (stateT > 1.5) {
+                        if (!active) { state = 'sitdown'; stateT = 0; sitFrom = { x: px.x, z: px.z }; yawFrom = yaw; }
+                        else { path = planTrip(); wi = 0; state = 'walk'; stateT = 0; }
+                    }
+                } else if (state === 'walk' || state === 'pause') {
+                    const tgtY = standY(px.x, px.z);
+                    if (state === 'walk') {
+                        mode = 'walk'; rate = 12;
+                        let moved = false;
+                        const wp = path[wi];
+                        const dx = wp.x - px.x, dz = wp.z - px.z, d = Math.hypot(dx, dz);
+                        const diff = wrapPi(Math.atan2(dx, dz) - yaw);
+                        yaw += clamp(diff, -2.6 * dt, 2.6 * dt);
+                        if (Math.abs(diff) < 0.7 && d > 0.001) {
+                            const step = Math.min(d, W.speed * dt);
+                            px.x += Math.sin(yaw) * step; px.z += Math.cos(yaw) * step;
+                            ph += (step / (0.8 * seat.scale)) * Math.PI * 2;
+                            moved = true;
+                        }
+                        if (!moved) mode = 'stand';
+                        if (d < 0.18) {
+                            if (wp.home) { state = 'sitdown'; stateT = 0; sitFrom = { x: px.x, z: px.z }; yawFrom = yaw; }
+                            else if (wp.special) { state = 'pause'; stateT = 0; pauseT = wp.special.pause || 5; faceYaw = wp.special.face ? Math.atan2(wp.special.face[0] - px.x, wp.special.face[1] - px.z) : yaw; if (wp.special.hearts) spawn(3); }
+                            else wi = Math.min(wi + 1, path.length - 1);
+                        }
+                    } else {
+                        mode = 'stand'; rate = 5;
+                        yaw += clamp(wrapPi(faceYaw - yaw), -1.8 * dt, 1.8 * dt);
+                        if (stateT > pauseT) { wi = Math.min(wi + 1, path.length - 1); state = 'walk'; stateT = 0; }
+                    }
+                    const bob = state === 'walk' ? Math.abs(Math.sin(ph)) * 0.035 * seat.scale : 0;
+                    root.position.set(px.x, root.position.y + (tgtY + bob - root.position.y) * (1 - Math.exp(-dt * 10)), px.z);
+                    root.rotation.y = yaw;
+                } else if (state === 'sitdown') {
+                    const u = smooth01(stateT / 2.1);
+                    mode = u > 0.5 ? 'sit' : 'stand'; rate = 5;
+                    px.x = sitFrom.x + (seat.pos.x - sitFrom.x) * u; px.z = sitFrom.z + (seat.pos.z - sitFrom.z) * u;
+                    yaw = yawFrom + wrapPi(seat.yaw - yawFrom) * u;
+                    const y0 = standY(sitFrom.x, sitFrom.z);
+                    root.position.set(px.x, y0 + (seat.pos.y - y0) * u, px.z);
+                    root.rotation.y = yaw;
+                    if (stateT >= 2.1) enterSit();
+                }
+
+                const walking = state === 'walk' && mode === 'walk';
+                applyPose(dt, targets(mode, ph), rate);
+
+                // little life: breathing, head movement, body lean
                 const b = Math.sin(t * 1.5);
-                him.upper.scale.y = 1 + b * 0.012; her.upper.scale.y = 1 + Math.sin(t * 1.5 + 0.6) * 0.012;
+                people.forEach((pp, p) => {
+                    pp.upper.scale.y = 1 + (p ? Math.sin(t * 1.5 + 0.6) : b) * 0.012;
+                    pp.upper.rotation.x += ((walking ? 0.06 : 0) - pp.upper.rotation.x) * Math.min(1, dt * 6);
+                });
                 const lean = happy > 0 ? Math.sin(Math.min(1, happy) * Math.PI) * 0.12 : 0;
                 happy = Math.max(0, happy - dt);
-                him.head.rotation.z = -0.1 - lean + Math.sin(t * 0.6) * 0.025;
-                her.head.rotation.z = 0.3 + lean + Math.sin(t * 0.55 + 1) * 0.025;
-                him.head.rotation.y = Math.sin(t * 0.3) * 0.12;
-                her.head.rotation.y = Math.sin(t * 0.27 + 2) * 0.1;
+                const seated = state === 'sit';
+                const tilt = seated ? 1 : 0.35;
+                people[0].upper.rotation.z = -0.04 * tilt; people[1].upper.rotation.z = 0.1 * tilt;
+                people[1].head.position.x = -0.08 * tilt;
+                people[0].head.rotation.z = -0.1 * tilt - lean + Math.sin(t * 0.6) * 0.025;
+                people[1].head.rotation.z = 0.3 * tilt + lean + Math.sin(t * 0.55 + 1) * 0.025;
+                people[0].head.rotation.y = walking ? Math.sin(t * 0.7) * 0.06 : Math.sin(t * 0.3) * 0.12;
+                people[1].head.rotation.y = walking ? Math.sin(t * 0.6 + 1) * 0.06 : Math.sin(t * 0.27 + 2) * 0.1;
+
+                if (lap) { lapK += ((seated ? 1 : 0) - lapK) * Math.min(1, dt * 5); lap.visible = lapK > 0.03; lap.scale.setScalar(Math.max(0.01, lapK)); }
+
                 nextHeart -= dt;
                 if (nextHeart < 0) { spawn(1); nextHeart = 5 + Math.random() * 5; }
                 hearts.forEach(h => {
@@ -189,6 +386,6 @@ const ZCouple = (() => {
         };
     }
 
-    return { makeCouple };
+    return { makeCouple, plaidTexture };
 })();
 window.ZCouple = ZCouple;

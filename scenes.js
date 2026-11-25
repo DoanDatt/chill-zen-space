@@ -214,6 +214,7 @@ class ZenScenes {
         this.world = w;
         this.currentSceneId = id;
         this.renderPass.scene = w.scene;
+        if (w.couple && w.couple.setActive) w.couple.setActive(!this.calm);
         const b = w.cfg.bloom;
         this.bloom.strength = b.strength; this.bloom.radius = b.radius; this.bloom.threshold = b.threshold;
         this.dragYaw = 0; this.dragPitch = 0; this.yaw = 0; this.pitch = 0; this.targetZoom = 1; this.zoom = 1;
@@ -248,7 +249,11 @@ class ZenScenes {
     }
 
     // focus mode: the scene barely reacts to the mouse so nothing distracts you
-    setCalm(v) { this.calm = !!v; }
+    setCalm(v) {
+        this.calm = !!v;
+        // while you focus, the couple sits quietly instead of wandering about
+        if (this.world && this.world.couple && this.world.couple.setActive) this.world.couple.setActive(!this.calm);
+    }
 
     // weather / effects: each world may expose { names: [...], index, set(i) }
     cycleWeather() {

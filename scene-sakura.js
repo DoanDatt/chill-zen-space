@@ -223,11 +223,31 @@ function buildSakuraScene() {
     box(bench, 1.9, 0.08, 0.5, benchWood, 0, 0.45, 0);
     box(bench, 1.9, 0.5, 0.06, benchWood, 0, 0.82, -0.3).rotation.x = -0.12;
     [[-0.8, -0.18], [0.8, -0.18], [-0.8, 0.18], [0.8, 0.18]].forEach(p => box(bench, 0.08, 0.45, 0.08, benchWood, p[0], 0.225, p[1]));
-    const couple = ZCouple.makeCouple({ outfit: 'spring' });
-    couple.mesh.scale.setScalar(1.2); couple.mesh.position.set(0, 0.61, -0.03);
-    ZU.shadowAll(couple.mesh, true);
-    bench.add(couple.mesh);
     scene.add(bench);
+    bench.updateMatrixWorld(true);
+    const couple = ZCouple.makeCouple({ outfit: 'spring' });
+    ZU.shadowAll(couple.mesh, true);
+    scene.add(couple.mesh);
+    couple.setSeat({ pos: bench.localToWorld(new THREE.Vector3(0, 0.61, -0.03)), yaw: 0, scale: 1.2 });
+    couple.setWander({
+        groundY: (x, z) => heightFn(x, z),
+        area: { x0: -6.5, x1: 7.5, z0: -4.0, z1: 3.6 },
+        freeRadius: 1.7,
+        isBlocked: (x, z) => {
+            if (((x - pond.x) / 4.9) ** 2 + ((z - pond.z) / 4.0) ** 2 < 1) return true;            // the pond
+            if (x < -9 || x > 9 || z < -8.2 || z > 4.4) return true;
+            for (const p of treeSpots) if (Math.hypot(x - p[0], z - p[1]) < p[2] * 1.0 + 0.5) return true;   // tree trunks
+            return Math.hypot(x - 6, z - 0.4) < 1.1 || Math.hypot(x + 2.8, z + 2.2) < 1.4 || Math.hypot(x + 2.7, z - 2.5) < 0.7 || Math.hypot(x + 2.15, z - 2.8) < 0.7;
+        },
+        // walk-around points that keep them out of the water: the ring road around the pond
+        via: [[-5.8, -3.0], [7.9, -3.0], [-5.5, 2.8], [7.5, 3.0], [-5.2, -7.3], [6.6, -7.4]],
+        specials: [
+            { x: 6.9, z: 1.7, face: [6, 0.4], pause: 6, hearts: true },        // by the stone lantern
+            { x: -4.3, z: -0.6, face: [-2.8, -2.2], pause: 6 },                  // watch the fawn
+            { x: -1.2, z: 2.6, face: [1.5, -1.5], pause: 7 }                     // look at the koi
+        ],
+        sitMin: 25, sitMax: 45
+    });
     updates.push((dt, t) => couple.update(dt, t));
 
     // ---------------------------------------------------------------- torii gate in the mist

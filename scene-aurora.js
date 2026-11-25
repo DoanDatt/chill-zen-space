@@ -257,12 +257,25 @@ function buildAuroraScene() {
     updates.push((dt) => { fox.update(dt); herd.update(dt); owl.update(dt); });
 
     // a couple wrapped up warm on a blanket, watching the aurora, with a small lantern
-    const couple = ZCouple.makeCouple({ ground: true, outfit: 'winter', mat: true });
-    couple.mesh.scale.setScalar(1.15);
-    couple.mesh.position.set(4.9, 0.17 * 1.15, -4.0);
-    couple.mesh.rotation.y = Math.PI + 0.25;
+    const seatYaw = Math.PI + 0.25;
+    const rug = new THREE.Group(); rug.position.set(4.9 - 0.07, 0.02, -4.0 - 0.28); rug.rotation.y = seatYaw;   // the blanket stays on the snow
+    const rugMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 1.95), new THREE.MeshStandardMaterial({ map: ZCouple.plaidTexture('#8f2f3a', 'rgba(255,220,180,.5)'), roughness: 1 }));
+    rugMesh.rotation.x = -Math.PI / 2; rugMesh.receiveShadow = true; rug.add(rugMesh); scene.add(rug);
+
+    const couple = ZCouple.makeCouple({ ground: true, outfit: 'winter' });
     ZU.shadowAll(couple.mesh, true);
     scene.add(couple.mesh);
+    couple.setSeat({ pos: new THREE.Vector3(4.9, 0.17 * 1.15 + 0.02, -4.0), yaw: seatYaw, scale: 1.15 });
+    couple.setWander({
+        groundY: (x, z) => heightFn(x, z),
+        area: { x0: 3.6, x1: 7.2, z0: -5.4, z1: 1.2 },
+        isBlocked: (x, z) => x < 3.1 || x > 9.2 || z > 2.4 || z < -5.8 || (x > 6.3 && z < -2.8) || Math.hypot(x - 3.5, z + 3.3) < 0.9 || Math.hypot(x - 2.9, z + 3.1) < 0.8,
+        specials: [
+            { x: 6.6, z: -1.8, face: [6.6, -40], pause: 9, hearts: true },     // stand together under the aurora
+            { x: 5.0, z: 0.4, face: [0, -30], pause: 6 }
+        ],
+        sitMin: 25, sitMax: 45
+    });
     const camp = new THREE.Group(); camp.position.set(3.5, 0, -3.3);
     const lampBody = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.24, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0xffc46b, side: THREE.DoubleSide }));
     lampBody.position.y = 0.14; camp.add(lampBody);

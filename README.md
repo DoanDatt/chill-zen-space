@@ -24,6 +24,7 @@ Thêm vào link: `&celebrate=anniversary` (hoặc `milestone`, `birthday`, `mont
 
 ## Điều khiển
 - **Rê chuột** để xoay cảnh, **kéo** để nhìn quanh, **lăn chuột / chụm hai ngón** để zoom. Điện thoại: **nghiêng máy** để nhìn quanh.
+- Cặp đôi **tự đứng dậy, nắm tay đi dạo** quanh cảnh rồi quay lại ngồi (không cần điều khiển). Khi bật chế độ tập trung họ ngồi yên.
 - **Chạm** vào cảnh để thả tim; chạm vào mèo, cặp đôi, hồ cá koi hoặc ảnh polaroid để thấy phản ứng.
 - Phím: **H** ẩn/hiện công cụ, **F** chế độ tập trung, **← →** đổi cảnh.
 - `?q=high|low|minimal` ép chất lượng đồ họa (mặc định tự chọn theo máy). `?scene=rain|aurora|beach|sakura` mở thẳng một cảnh.

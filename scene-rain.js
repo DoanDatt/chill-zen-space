@@ -341,12 +341,28 @@ function buildRainScene() {
     box(sofa, 0.35, 0.6, 1.2, sofaMat, -1.5, 0.4, 0);
     box(sofa, 0.35, 0.6, 1.2, sofaMat, 1.5, 0.4, 0);
     box(sofa, 2.5, 0.15, 0.95, stdMat(0xa05a52, 0.95), 0, 0.475, 0.1);
-    const couple = ZCouple.makeCouple({ outfit: 'cozy', blanket: true });
-    couple.mesh.scale.setScalar(1.3); couple.mesh.position.set(0, 0.68, 0.0);
-    ZU.shadowAll(couple.mesh, true);
-    sofa.add(couple.mesh);
-    updates.push((dt, t) => couple.update(dt, t));
+    // the plaid blanket stays on the sofa when they get up
+    const sofaBlanket = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.05, 0.85), new THREE.MeshStandardMaterial({ map: ZCouple.plaidTexture('#c0553b', 'rgba(255,230,190,.55)'), roughness: 1 }));
+    sofaBlanket.position.set(0, 0.58, 0.12); sofaBlanket.rotation.y = 0.08; sofaBlanket.receiveShadow = true; sofa.add(sofaBlanket);
     scene.add(sofa);
+    sofa.updateMatrixWorld(true);
+
+    const couple = ZCouple.makeCouple({ outfit: 'cozy', blanket: true });
+    ZU.shadowAll(couple.mesh, true);
+    scene.add(couple.mesh);
+    couple.setSeat({ pos: sofa.localToWorld(new THREE.Vector3(0, 0.68, 0)), yaw: sofa.rotation.y, scale: 1.3 });
+    couple.setWander({
+        groundY: () => 0,
+        area: { x0: -1.5, x1: 5.5, z0: -0.5, z1: 3.4 },
+        isBlocked: (x, z) => Math.hypot(x - 3.7, z + 2.4) < 1.15 || Math.hypot(x - 0.5, z + 3.3) < 1.0 || Math.hypot(x + 3.9, z + 1.6) < 2.0 || z < -4.2 || z > 3.8 || x > 6.6 || x < -6.2,
+        specials: [
+            { x: 2.5, z: -0.7, face: [3.7, -2.4], pause: 6, hearts: true },    // say hi to the cat
+            { x: 4.9, z: -3.7, face: [5.5, -5.4], pause: 6 },                   // warm up by the fire
+            { x: -1.0, z: -2.2, face: [-1.0, -6], pause: 7 }                    // watch the rain at the window
+        ],
+        sitMin: 22, sitMax: 40
+    });
+    updates.push((dt, t) => couple.update(dt, t));
 
     // ---------------------------------------------------------------- rug + cat
     const rugTex = canvasTex(512, 512, (g, w, h) => {
