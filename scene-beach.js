@@ -273,11 +273,6 @@ function buildBeachScene() {
         set(i) { this.index = i; const m = [1, 0.35, 0.05][i]; clouds.forEach(c => { c.s.material.opacity = c.base * m; }); }
     };
 
-    // wooden sign stuck in the sand: "A ♥ B"
-    const sign = ZU.makeSign(ZU.signParts());
-    sign.position.set(0.9, sandH(0.9, 1.0) - 0.05, 1.0); sign.rotation.y = -0.25; sign.scale.setScalar(1.15);
-    scene.add(sign);
-
     // beach umbrella
     const umb = new THREE.Group(); umb.position.set(-7.2, sandH(-7.2, 3.5), 3.5); umb.rotation.z = 0.12;
     umb.add(ZU.at(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.8, 6), stdMat(0xe8dcc8, 0.6)), 0, 1.4, 0));

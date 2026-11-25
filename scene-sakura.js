@@ -230,11 +230,6 @@ function buildSakuraScene() {
     scene.add(bench);
     updates.push((dt, t) => couple.update(dt, t));
 
-    // wooden sign: "A ♥ B"
-    const sign = ZU.makeSign(ZU.signParts());
-    sign.position.set(-3.6, heightFn(-3.6, 1.6), 1.6); sign.rotation.y = 0.35; sign.scale.setScalar(1.15);
-    scene.add(sign);
-
     // ---------------------------------------------------------------- torii gate in the mist
     const torii = new THREE.Group(); torii.position.set(0, heightFn(0, -27), -27);
     const red = stdMat(0xd9382f, 0.7), blk = stdMat(0x1f1a1c, 0.8);

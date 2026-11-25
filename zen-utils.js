@@ -264,41 +264,6 @@ const ZU = (() => {
         return m;
     }
 
-    // Wooden sign post with text such as "A ♥ B"
-    function makeSign(parts, w = 2.1, h = 0.82) {
-        const g = new THREE.Group();
-        const wood = new THREE.MeshStandardMaterial({ color: 0x9a6b3f, roughness: 0.9 });
-        const tex = canvasTex(512, 200, (c, W, H) => {
-            c.fillStyle = '#c99a62'; c.fillRect(0, 0, W, H);
-            for (let i = 0; i < 26; i++) { c.strokeStyle = 'rgba(90,55,25,' + (0.06 + Math.random() * 0.1) + ')'; c.beginPath(); c.moveTo(0, Math.random() * H); c.bezierCurveTo(W * .3, Math.random() * H, W * .7, Math.random() * H, W, Math.random() * H); c.stroke(); }
-            c.strokeStyle = '#7a4d28'; c.lineWidth = 10; c.strokeRect(5, 5, W - 10, H - 10);
-            let size = 64;
-            const measure = () => { c.font = 'bold ' + size + 'px Georgia, serif'; return parts.reduce((a, p) => a + c.measureText(p.t).width, 0); };
-            while (measure() > W - 70 && size > 20) size -= 2;
-            let x = (W - measure()) / 2;
-            c.textBaseline = 'middle';
-            parts.forEach(p => {
-                c.fillStyle = p.heart ? '#d9304f' : '#4a2812';
-                c.shadowColor = 'rgba(255,240,210,.55)'; c.shadowBlur = 2; c.shadowOffsetY = 2;
-                c.fillText(p.t, x, H / 2 + 4);
-                x += c.measureText(p.t).width;
-            });
-        });
-        const board = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.09), [wood, wood, wood, wood, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 }), wood]);
-        board.position.y = 1.15; board.castShadow = true; g.add(board);
-        [-w * 0.36, w * 0.36].forEach(px => {
-            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.25, 7), wood);
-            post.position.set(px, 0.62, -0.08); post.castShadow = true; g.add(post);
-        });
-        return g;
-    }
-
-    function signParts() {
-        const c = window.ZEN_CONFIG || { for: 'Hạnh', from: 'Đạt' };
-        if (c.from) return [{ t: c.from + ' ' }, { t: '♥', heart: true }, { t: ' ' + c.for }];
-        return [{ t: '♥ ', heart: true }, { t: c.for === 'em' ? 'Mãi bên nhau' : c.for }, { t: ' ♥', heart: true }];
-    }
-
     // Polaroid photo cards (photos come from love-config.js). Tap one in a scene to open it large.
     const photoTexCache = {};
     function loadPhotoTex(src, cb) {
@@ -440,7 +405,7 @@ const ZU = (() => {
 
     return {
         TAU, clamp, lerp, rand, smooth, rng, vnoise, fbm, canvasTex, glowTex, heartTex, cloudTex, glowSprite,
-        makeSky, makeTwinkle, makeStars, makeTerrain, makeRidgeRing, instanced, stdMat, box, at, makeSign, signParts, makePolaroid, addPolaroids, swayPolaroids, shadowAll,
+        makeSky, makeTwinkle, makeStars, makeTerrain, makeRidgeRing, instanced, stdMat, box, at, makePolaroid, addPolaroids, swayPolaroids, shadowAll,
         makeFire, makeSteam, pixelRatio: 1
     };
 })();

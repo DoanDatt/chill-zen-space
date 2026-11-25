@@ -10,7 +10,7 @@
     const valid = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : '');
     const since = valid(p.get('since')) || valid(ls('since')) || valid(window.LOVE && window.LOVE.since);
     window.ZEN_CONFIG = {
-        for: 'Hạnh',          // used on the wooden signs: "Đạt ♥ Hạnh"
+        for: 'Hạnh',
         nick: 'bé Hạnh',      // used in greetings: "Dành tặng bé Hạnh"
         from: 'Đạt',
         since
